@@ -87,8 +87,6 @@ pub struct JoinGameCommand {
     pub join_code: String,
 }
 
-// TODO : read https://serde.rs/lifetimes.html
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Message<
