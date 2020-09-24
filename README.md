@@ -1,7 +1,5 @@
-# webgame
+# Webgame
 
-A generic game server library.
+A generic rust game server library: users connections management, game creation, invitations with a game code.
 
-Manage users connections, game creation, invitations with a game code.
-
-See [webtarot](https://github.com/mmai/webtarot) for a usage exemple.
+See [Webtarot](https://github.com/mmai/webtarot) for a usage exemple.

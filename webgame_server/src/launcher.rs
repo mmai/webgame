@@ -5,18 +5,28 @@ use std::fmt::Debug;
 use webgame_protocol::{GameState, GameStateSnapshot, PlayerState};
 use crate::server;
 
-pub async fn launch<GamePlayCommand:Debug+Send+DeserializeOwned+'static, SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static, GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>+'static, GamePlayerStateT: PlayerState+'static, GameStateSnapshotT: GameStateSnapshot+'static, PlayEventT: Serialize+Send+Sync+'static>(
-    on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>,
-    on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>
+pub async fn launch<
+    GamePlayCommand:Debug+Send+DeserializeOwned+'static,
+    SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>+'static,
+    GamePlayerStateT: PlayerState+'static,
+    GameStateSnapshotT: GameStateSnapshot+'static,
+    PlayEventT: Serialize+Send+Sync+'static>(
+        name: &'static str,
+        version: String,
+        // version: &'static str,
+        author: &'static str,
+        on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>,
+        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>
     ) {
 // pub async fn launch(dispatcher: impl server::GameDispatcher) {
     pretty_env_logger::init();
 
 
     let app = App::new("Webtarot")
-        .version("1.0")
-        .author("Henri Bourcereau <henri@bourcereau.fr>")
-        .about("A online game of french tarot")
+        .version(version.as_str())
+        .author(author)
+        .about(name)
         .arg(Arg::with_name("directory")
              .short("d")
              .long("directory")
