@@ -320,6 +320,7 @@ async fn on_player_authenticate<'de, GameStateType:GameState<GamePlayerStateT, G
     Ok(())
 }
 
+//XXX obsolete ?
 pub async fn on_player_continue<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>>,
     user_id: Uuid,
@@ -337,8 +338,13 @@ pub async fn on_player_mark_ready<'de, GameStateType:GameState<GamePlayerStateT,
 ) -> Result<(), ProtocolError> {
     if let Some(game) = universe.get_user_game(user_id).await {
         if game.is_joinable().await {
-            game.mark_player_ready(user_id).await;
+            let mut needs_update = game.mark_player_ready(user_id).await;
             game.broadcast_state().await;
+            // This loop is used to broacast several states during init phase
+            while needs_update {
+                needs_update = game.update_init_state().await;
+                game.broadcast_state().await;
+            }
         }
     }
     Ok(())

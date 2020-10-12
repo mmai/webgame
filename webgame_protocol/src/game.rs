@@ -29,7 +29,8 @@ pub trait GameState<GamePlayerState: PlayerState, Snapshot: GameStateSnapshot>: 
     fn set_player_role(&mut self, player_id: Uuid, role: Self::PlayerRole);
     fn player_by_pos(&self, position: Self::PlayerPos) -> Option<&GamePlayerState>;
     fn make_snapshot(&self, player_id: Uuid) -> Snapshot;
-    fn set_player_ready(&mut self, player_id: Uuid);
+    fn set_player_ready(&mut self, player_id: Uuid) -> bool;
+    fn update_init_state(&mut self) -> bool;
     fn set_player_not_ready(&mut self, player_id: Uuid);
 }
 

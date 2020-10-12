@@ -142,9 +142,14 @@ impl<'gs, GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT>
         game_state.set_player_not_ready(player_id);
     }
 
-    pub async fn mark_player_ready(&self, player_id: Uuid) {
+    pub async fn mark_player_ready(&self, player_id: Uuid) -> bool {
         let mut game_state = self.game_state.lock().await;
-        game_state.set_player_ready(player_id);
+        game_state.set_player_ready(player_id)
+    }
+
+    pub async fn update_init_state(&self) -> bool {
+        let mut game_state = self.game_state.lock().await;
+        game_state.update_init_state()
     }
 
     pub async fn broadcast(&self, message: &Message<GamePlayerStateT, GameStateSnapshotT, PlayEventT>) {
