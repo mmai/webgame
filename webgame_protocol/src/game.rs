@@ -11,6 +11,11 @@ pub struct GameInfo {
     pub join_code: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Variant<VariantParameters> {
+    pub parameters: VariantParameters,
+}
+
 //Used for server diagnostics
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GameExtendedInfo {

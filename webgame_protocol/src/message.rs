@@ -6,11 +6,11 @@ use crate::player::PlayerInfo;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "cmd", rename_all = "snake_case")]
-pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot> {
+pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, VariantCommand> {
     Ping,
     Authenticate(AuthenticateCommand),
     SendText(SendTextCommand),
-    NewGame,
+    NewGame(VariantCommand),
     JoinGame(JoinGameCommand),
     LeaveGame,
     MarkReady,

@@ -192,7 +192,7 @@ async fn on_user_message<
         match cmd {
             Command::Ping => on_ping(universe, user_id).await,
 
-            Command::NewGame => on_new_game(universe, user_id).await,
+            Command::NewGame(variant) => on_new_game(universe, user_id, variant).await,
             Command::JoinGame(cmd) => on_join_game(universe, user_id, cmd).await,
             Command::MarkReady => on_player_mark_ready(universe, user_id).await,
             Command::LeaveGame => on_leave_game(universe, user_id).await,
@@ -216,7 +216,7 @@ async fn on_user_message<
     }
 }
 
-async fn on_new_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>>, user_id: Uuid) -> Result<(), ProtocolError> {
+async fn on_new_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>>, user_id: Uuid, variant: GenericVariant) -> Result<(), ProtocolError> {
     universe.remove_user_from_game(user_id).await;
     let game = universe.new_game().await;
     game.add_player(user_id).await;
