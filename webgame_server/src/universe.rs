@@ -51,21 +51,21 @@ pub struct UniverseUserState {
     tx: mpsc::UnboundedSender<Result<ws::Message, warp::Error>>,
 }
 
-pub struct UniverseState<GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT, VariantParameters> {
+pub struct UniverseState<GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT, VariantParameters> {
     users: HashMap<Uuid, UniverseUserState>,
     games: HashMap<Uuid, Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>>,
     joinable_games: HashMap<String, Uuid>,
 }
 
 pub struct Universe<
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>,
     GamePlayerStateT: PlayerState,
     GameStateSnapshotT: GameStateSnapshot,
     PlayEventT, VariantParameters> {
         state: Arc<RwLock<UniverseState<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>>,
 }
 
-impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT>, GamePlayerStateT: PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Serialize+Send, VariantParameters> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
+impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Serialize+Send, VariantParameters> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
     pub fn new() -> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {

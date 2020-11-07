@@ -8,7 +8,7 @@ use crate::server;
 pub async fn launch<
     GamePlayCommand:Debug+Send+DeserializeOwned+'static,
     SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static,
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>+'static,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+'static,
     GamePlayerStateT: PlayerState+'static,
     GameStateSnapshotT: GameStateSnapshot+'static,
     PlayEventT: Serialize+Send+Sync+'static,

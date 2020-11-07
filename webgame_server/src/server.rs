@@ -37,7 +37,7 @@ pub type SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerSta
 async fn on_websocket_connect<
     GamePlayCommand: Debug+DeserializeOwned,
     SetPlayerRoleCommand: Debug+DeserializeOwned,
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT: PlayerState,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT: PlayerState,
     GameStateSnapshotT: GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters:Debug+DeserializeOwned+Send+Serialize>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     guid_uuid: String,
@@ -117,7 +117,7 @@ async fn on_websocket_connect<
     on_user_disconnected(universe, user.id).await;
 }
 
-async fn on_user_disconnected<GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters:Send+Serialize>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid) {
+async fn on_user_disconnected<GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters:Send+Serialize>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid) {
     // If all users have disconnected, we remove the game itself
     if let Some(game) = universe.get_user_game(user_id).await {
         // At this point we check if there is only this disconnecting user left
@@ -133,7 +133,7 @@ async fn on_user_disconnected<GameStateType:GameState<GamePlayerStateT, GameStat
 async fn on_user_message<
     GamePlayCommand: DeserializeOwned + std::fmt::Debug,
     SetPlayerRoleCommand: DeserializeOwned + std::fmt::Debug, 
-    GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default,
+    GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default,
     GamePlayerStateT:PlayerState,
     GameStateSnapshotT:GameStateSnapshot,
     PlayEventT:Send+Serialize,
@@ -216,7 +216,7 @@ async fn on_user_message<
     }
 }
 
-async fn on_new_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid, variant: Variant<VariantParameters>) -> Result<(), ProtocolError> {
+async fn on_new_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid, variant: Variant<VariantParameters>) -> Result<(), ProtocolError> {
     universe.remove_user_from_game(user_id).await;
     let game = universe.new_game(variant).await;
     game.add_player(user_id).await;
@@ -227,7 +227,7 @@ async fn on_new_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSna
     Ok(())
 }
 
-async fn on_join_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_join_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
     cmd: JoinGameCommand,
@@ -240,7 +240,7 @@ async fn on_join_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSn
     Ok(())
 }
 
-async fn on_leave_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid) -> Result<(), ProtocolError> {
+async fn on_leave_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, user_id: Uuid) -> Result<(), ProtocolError> {
     log::info!(
         "player {:?} leaving game",
         user_id
@@ -250,7 +250,7 @@ async fn on_leave_game<'de, GameStateType:GameState<GamePlayerStateT, GameStateS
     Ok(())
 }
 
-async fn on_ping<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_ping<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
 ) -> Result<(), ProtocolError> {
@@ -260,7 +260,7 @@ async fn on_ping<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapsho
     Ok(())
 }
 
-async fn on_show_uuid<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_show_uuid<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
 ) -> Result<(), ProtocolError> {
@@ -271,7 +271,7 @@ async fn on_show_uuid<'de, GameStateType:GameState<GamePlayerStateT, GameStateSn
     Ok(())
 }
 
-async fn on_server_status<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_server_status<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
 ) -> Result<(), ProtocolError> {
@@ -283,7 +283,7 @@ async fn on_server_status<'de, GameStateType:GameState<GamePlayerStateT, GameSta
     Ok(())
 }
 
-async fn on_debug_ui<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_debug_ui<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     cmd: DebugUiCommand<GameStateSnapshotT>,
 ) -> Result<(), ProtocolError> {
@@ -293,7 +293,7 @@ async fn on_debug_ui<'de, GameStateType:GameState<GamePlayerStateT, GameStateSna
     Ok(())
 }
 
-async fn on_player_authenticate<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+async fn on_player_authenticate<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
     cmd: AuthenticateCommand,
@@ -321,7 +321,7 @@ async fn on_player_authenticate<'de, GameStateType:GameState<GamePlayerStateT, G
 }
 
 //XXX obsolete ?
-pub async fn on_player_continue<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+pub async fn on_player_continue<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
 ) -> Result<(), ProtocolError> {
@@ -332,7 +332,7 @@ pub async fn on_player_continue<'de, GameStateType:GameState<GamePlayerStateT, G
     Ok(())
 }
 
-pub async fn on_player_mark_ready<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+pub async fn on_player_mark_ready<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
 ) -> Result<(), ProtocolError> {
@@ -350,7 +350,7 @@ pub async fn on_player_mark_ready<'de, GameStateType:GameState<GamePlayerStateT,
     Ok(())
 }
 
-pub async fn on_user_send_text<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
+pub async fn on_user_send_text<'de, GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Send+Serialize, VariantParameters>(
     universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     user_id: Uuid,
     cmd: SendTextCommand,
@@ -372,7 +372,7 @@ pub async fn on_user_send_text<'de, GameStateType:GameState<GamePlayerStateT, Ga
 
 pub async fn serve<GamePlayCommand: Send+Debug+DeserializeOwned+'static, SetPlayerRoleCommand: Send+Debug+DeserializeOwned+'static,
 // pub async fn serve<'de, GamePlayCommand: Send+Debug+Deserialize<'de>, SetPlayerRoleCommand: Send+Debug+Deserialize<'de>,
-GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT>+'static, GamePlayerStateT:PlayerState+'static, GameStateSnapshotT:GameStateSnapshot+'static, PlayEventT:Serialize+Send+Sync+'static, VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static> (
+GameStateType:GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+'static, GamePlayerStateT:PlayerState+'static, GameStateSnapshotT:GameStateSnapshot+'static, PlayEventT:Serialize+Send+Sync+'static, VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static> (
     public_dir: String,
     socket: SocketAddr,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>,
