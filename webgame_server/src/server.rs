@@ -161,7 +161,7 @@ async fn on_user_message<
         }
     };
 
-    let cmd: Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshotT, VariantParameters> = match serde_json::from_str(&req_json) {
+    let cmd: Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshotT, Variant<VariantParameters>> = match serde_json::from_str(&req_json) {
         Ok(req) => req,
         Err(err) => {
             log::debug!("error parsing json {}", err);
@@ -192,7 +192,7 @@ async fn on_user_message<
         match cmd {
             Command::Ping => on_ping(universe, user_id).await,
 
-            Command::NewGame(parameters) => on_new_game(universe, user_id, Variant { parameters }).await,
+            Command::NewGame(variant) => on_new_game(universe, user_id, variant).await,
             Command::JoinGame(cmd) => on_join_game(universe, user_id, cmd).await,
             Command::MarkReady => on_player_mark_ready(universe, user_id).await,
             Command::LeaveGame => on_leave_game(universe, user_id).await,
