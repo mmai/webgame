@@ -10,20 +10,22 @@ use crate::protocol::{
     GameInfo, GameExtendedInfo, GameState, GameStateSnapshot,// game
     Message, PlayerDisconnectedMessage, // message
     PlayerInfo, // player
+    Variant,
 };
 use crate::universe::Universe;
 
-pub struct Game<GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT> {
+pub struct Game<GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT, VariantParameters> {
     id: Uuid,
     join_code: String,
-    universe: Weak<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>>,
+    universe: Weak<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>,
     game_state: Arc<Mutex<GameStateType>>,
+    // variant: Variant<VariantParameters>
 }
 
 impl
-    <'gs, GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT> 
+    <'gs, GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT, VariantParameters> 
 fmt::Debug for Game
-    <GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT> {
+    <GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Game")
          .field("id", &self.id)
@@ -32,18 +34,21 @@ fmt::Debug for Game
     }
 }
 
-impl<'gs, GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT>,
+impl<'gs, GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>,
     GamePlayerStateT: PlayerState,
     GameStateSnapshotT: GameStateSnapshot,
-    PlayEventT: Send+Serialize> 
-    Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT> {
+    PlayEventT: Send+Serialize,
+    VariantParameters> 
+    Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
 
-    pub fn new(join_code: String, universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>>) -> Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT> {
+    pub fn new(join_code: String, universe: Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, variant: Variant<VariantParameters>) -> Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
+        let mut game_state = GameStateType::default();
+        game_state.set_variant(variant);
         Game {
             id: Uuid::new_v4(),
             join_code,
             universe: Arc::downgrade(&universe),
-            game_state: Arc::new(Mutex::new(GameStateType::default())),
+            game_state: Arc::new(Mutex::new(game_state)),
         }
     }
 
@@ -81,7 +86,7 @@ impl<'gs, GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT>
         self.game_state.lock().await.is_joinable()
     }
 
-    pub fn universe(&self) -> Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>> {
+    pub fn universe(&self) -> Arc<Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>> {
         self.universe.upgrade().unwrap()
     }
 

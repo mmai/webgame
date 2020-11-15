@@ -11,6 +11,11 @@ pub struct GameInfo {
     pub join_code: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Variant<VariantParameters> {
+    pub parameters: VariantParameters,
+}
+
 //Used for server diagnostics
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GameExtendedInfo {
@@ -18,7 +23,7 @@ pub struct GameExtendedInfo {
     pub players: Vec<Uuid>
 }
 
-pub trait GameState<GamePlayerState: PlayerState, Snapshot: GameStateSnapshot>: Sync+Default+Send {
+pub trait GameState<GamePlayerState: PlayerState, Snapshot: GameStateSnapshot, VariantParameters>: Sync+Default+Send {
     type PlayerPos: Send;
     type PlayerRole;
 
@@ -32,6 +37,8 @@ pub trait GameState<GamePlayerState: PlayerState, Snapshot: GameStateSnapshot>: 
     fn set_player_ready(&mut self, player_id: Uuid) -> bool;
     fn update_init_state(&mut self) -> bool;
     fn set_player_not_ready(&mut self, player_id: Uuid);
+
+    fn set_variant(&mut self, variant: Variant<VariantParameters>);
 }
 
 pub trait GameStateSnapshot: Debug+Serialize+DeserializeOwned+Send+Sync { }

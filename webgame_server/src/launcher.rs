@@ -8,16 +8,18 @@ use crate::server;
 pub async fn launch<
     GamePlayCommand:Debug+Send+DeserializeOwned+'static,
     SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static,
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT>+'static,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+'static,
     GamePlayerStateT: PlayerState+'static,
     GameStateSnapshotT: GameStateSnapshot+'static,
-    PlayEventT: Serialize+Send+Sync+'static>(
+    PlayEventT: Serialize+Send+Sync+'static,
+    VariantParameters: Debug+DeserializeOwned+Serialize+Send+Sync+'static,
+    >(
         name: &'static str,
         version: String,
         // version: &'static str,
         author: &'static str,
-        on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>,
-        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT>
+        on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>,
+        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>
     ) {
 // pub async fn launch(dispatcher: impl server::GameDispatcher) {
     pretty_env_logger::init();
