@@ -23,22 +23,28 @@ pub struct GameExtendedInfo {
     pub players: Vec<Uuid>
 }
 
-pub trait GameState<GamePlayerState: PlayerState, Snapshot: GameStateSnapshot, VariantParameters>: Sync+Default+Send {
+pub trait GameState: Sync+Default+Send {
     type PlayerPos: Send;
     type PlayerRole;
+    type GamePlayerState: PlayerState;
+    type Snapshot: GameStateSnapshot;
+    type Operation: DebugOperation;
+    type VariantParameters;
 
     fn is_joinable(&self) -> bool;
-    fn get_players(&self) -> &BTreeMap<Uuid, GamePlayerState>;
+    fn get_players(&self) -> &BTreeMap<Uuid, Self::GamePlayerState>;
     fn add_player(&mut self, player_info: PlayerInfo) -> Self::PlayerPos; 
     fn remove_player(&mut self, player_id: Uuid) -> bool;
     fn set_player_role(&mut self, player_id: Uuid, role: Self::PlayerRole);
-    fn player_by_pos(&self, position: Self::PlayerPos) -> Option<&GamePlayerState>;
-    fn make_snapshot(&self, player_id: Uuid) -> Snapshot;
+    fn player_by_pos(&self, position: Self::PlayerPos) -> Option<&Self::GamePlayerState>;
+    fn make_snapshot(&self, player_id: Uuid) -> Self::Snapshot;
     fn set_player_ready(&mut self, player_id: Uuid) -> bool;
     fn update_init_state(&mut self) -> bool;
     fn set_player_not_ready(&mut self, player_id: Uuid);
 
-    fn set_variant(&mut self, variant: Variant<VariantParameters>);
+    fn set_variant(&mut self, variant: Variant<Self::VariantParameters>);
+    fn manage_operation(&mut self, operation: Self::Operation);
 }
 
 pub trait GameStateSnapshot: Debug+Serialize+DeserializeOwned+Send+Sync { }
+pub trait DebugOperation: Debug+Serialize+DeserializeOwned+Send+Sync { }
