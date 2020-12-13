@@ -6,7 +6,7 @@ use crate::player::PlayerInfo;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "cmd", rename_all = "snake_case")]
-pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, VariantCommand> {
+pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, DebugOperation, VariantCommand> {
     Ping,
     Authenticate(AuthenticateCommand),
     SendText(SendTextCommand),
@@ -20,6 +20,7 @@ pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, Varia
     SetPlayerRole(SetPlayerRoleCommand),
 
     DebugUi(DebugUiCommand<GameStateSnapshot>), // Used to send a custom state to a client, allows to quickly view the UI at a given state of the game without having to play all the hands leading to this state.
+    DebugGame(DebugGameCommand<DebugOperation>), // Send an operation to the game
     ShowUuid, // get uuid of connected client : for use with debugUi
     ShowServerStatus, // get server infos : active games, players connected...
 }
@@ -72,6 +73,12 @@ pub struct AuthenticateCommand {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DebugGameCommand<DebugOperation> {
+    pub game_id: Uuid,
+    pub operation: DebugOperation,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DebugUiCommand<GameStateSnapshot> {
     pub player_id: Uuid,
     pub snapshot: GameStateSnapshot,
@@ -94,6 +101,7 @@ pub struct JoinGameCommand {
 pub enum Message<
     GamePlayerStateT,
     GameStateSnapshotT: Send,
+    DebugOperationT: Send,
     PlayEventT: Send> {
     Connected,
     Pong,
@@ -108,6 +116,7 @@ pub enum Message<
     Error(ProtocolError),
     PlayEvent(PlayEventT),
     GameStateSnapshot(GameStateSnapshotT),
+    DebugOperation(DebugOperationT)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

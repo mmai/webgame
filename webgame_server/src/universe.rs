@@ -8,7 +8,7 @@ use uuid::Uuid;
 use warp::ws;
 
 use crate::game::Game;
-use crate::protocol::{Message, PlayerInfo, PlayerState, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, GameStateSnapshot, Variant};
+use crate::protocol::{Message, PlayerInfo, PlayerState, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, GameStateSnapshot, Variant, DebugOperation};
 use crate::utils::generate_join_code;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -51,22 +51,28 @@ pub struct UniverseUserState {
     tx: mpsc::UnboundedSender<Result<ws::Message, warp::Error>>,
 }
 
-pub struct UniverseState<GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT: GameStateSnapshot, PlayEventT, VariantParameters> {
-    users: HashMap<Uuid, UniverseUserState>,
-    games: HashMap<Uuid, Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>>,
-    joinable_games: HashMap<String, Uuid>,
+pub struct UniverseState<
+    GameStateType: GameState,
+    GamePlayerStateT: PlayerState,
+    GameStateSnapshotT: GameStateSnapshot,
+    DebugOperationT: DebugOperation,
+    PlayEventT, VariantParameters> {
+        users: HashMap<Uuid, UniverseUserState>,
+        games: HashMap<Uuid, Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>>>,
+        joinable_games: HashMap<String, Uuid>,
 }
 
 pub struct Universe<
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>,
+    GameStateType: GameState,
     GamePlayerStateT: PlayerState,
     GameStateSnapshotT: GameStateSnapshot,
+    DebugOperationT: DebugOperation,
     PlayEventT, VariantParameters> {
-        state: Arc<RwLock<UniverseState<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>>,
+        state: Arc<RwLock<UniverseState<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>>>,
 }
 
-impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>, GamePlayerStateT: PlayerState, GameStateSnapshotT:GameStateSnapshot, PlayEventT:Serialize+Send, VariantParameters> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
-    pub fn new() -> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters> {
+impl<GameStateType: Default+GameState, GamePlayerStateT: PlayerState, GameStateSnapshotT:GameStateSnapshot, DebugOperationT: DebugOperation, PlayEventT:Serialize+Send, VariantParameters> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters> {
+    pub fn new() -> Universe<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {
                 users: HashMap::new(),
@@ -97,7 +103,7 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
     }
 
     /// Starts a new game.
-    pub async fn new_game(self: &Arc<Self>, variant: Variant<VariantParameters>) -> Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>> {
+    pub async fn new_game(self: &Arc<Self>, variant: Variant<VariantParameters>) -> Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>> {
         let mut universe_state = self.state.write().await;
 
         loop {
@@ -120,7 +126,7 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
         &self,
         user_id: Uuid,
         join_code: String,
-    ) -> Result<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>, ProtocolError> {
+    ) -> Result<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>>, ProtocolError> {
         // assign to temporary to release lock.
         let game_id = self
             .state
@@ -142,6 +148,22 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
                     ));
                 }
             }
+        }
+
+        Err(ProtocolError::new(
+            ProtocolErrorKind::NotFound,
+            "game does not exist",
+        ))
+    }
+
+    pub async fn debug_game(
+        &self,
+        game_id: Uuid,
+        operation: DebugOperationT,
+    ) -> Result<(), ProtocolError> {
+        if let Some(game) = self.get_game(game_id).await {
+            game.manage_operation(operation).await;
+            return Ok(());
         }
 
         Err(ProtocolError::new(
@@ -260,7 +282,7 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
     }
 
     /// Returns a game by ID
-    pub async fn get_game(&self, game_id: Uuid) -> Option<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>> {
+    pub async fn get_game(&self, game_id: Uuid) -> Option<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>>> {
         let universe_state = self.state.read().await;
         universe_state.games.get(&game_id).cloned()
     }
@@ -272,7 +294,7 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
     }
 
     /// Returns the game a user is in.
-    pub async fn get_user_game(&self, user_id: Uuid) -> Option<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>>> {
+    pub async fn get_user_game(&self, user_id: Uuid) -> Option<Arc<Game<GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>>> {
         let universe_state = self.state.read().await;
         universe_state
             .users
@@ -300,7 +322,7 @@ impl<GameStateType: Default+GameState<GamePlayerStateT, GameStateSnapshotT, Vari
     }
 
     /// Send a message to a single user.
-    pub async fn send(&self, user_id: Uuid, message: &Message<GamePlayerStateT, GameStateSnapshotT, PlayEventT>) {
+    pub async fn send(&self, user_id: Uuid, message: &Message<GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT>) {
         let universe_state = self.state.write().await;
         if let Some(ref state) = universe_state.users.get(&user_id) {
             let s = serde_json::to_string(message).unwrap();

@@ -2,15 +2,16 @@ use clap::{Arg, App};
 use serde::{Serialize, de::DeserializeOwned};
 use std::fmt::Debug;
 
-use webgame_protocol::{GameState, GameStateSnapshot, PlayerState};
+use webgame_protocol::{GameState, GameStateSnapshot, PlayerState, DebugOperation};
 use crate::server;
 
 pub async fn launch<
     GamePlayCommand:Debug+Send+DeserializeOwned+'static,
     SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static,
-    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, VariantParameters>+'static,
+    GameStateType: GameState<GamePlayerStateT, GameStateSnapshotT, DebugOperationT, VariantParameters>+'static,
     GamePlayerStateT: PlayerState+'static,
     GameStateSnapshotT: GameStateSnapshot+'static,
+    DebugOperationT: DebugOperation+'static,
     PlayEventT: Serialize+Send+Sync+'static,
     VariantParameters: Debug+DeserializeOwned+Serialize+Send+Sync+'static,
     >(
@@ -18,8 +19,8 @@ pub async fn launch<
         version: String,
         // version: &'static str,
         author: &'static str,
-        on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>,
-        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, PlayEventT, VariantParameters>
+        on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>,
+        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, GamePlayerStateT, GameStateSnapshotT, DebugOperationT, PlayEventT, VariantParameters>
     ) {
 // pub async fn launch(dispatcher: impl server::GameDispatcher) {
     pretty_env_logger::init();
