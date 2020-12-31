@@ -7,7 +7,7 @@ use std::fmt;
 
 use webgame_protocol::PlayerState;
 use crate::protocol::{
-    GameInfo, GameExtendedInfo, GameState, // game
+    GameInfo, GameExtendedInfo, GameState, GameManager, GameEventsListener, // game
     Message, PlayerDisconnectedMessage, // message
     PlayerInfo, // player
     Variant,
