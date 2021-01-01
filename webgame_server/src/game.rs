@@ -15,7 +15,7 @@ use crate::protocol::{
 use crate::universe::Universe;
 
 pub struct Game<GameStateType: GameState, PlayEventType> {
-    id: Uuid,
+    pub id: Uuid,
     join_code: String,
     universe: Weak<Universe<GameStateType, PlayEventType>>,
     game_state: Arc<Mutex<GameStateType>>,
