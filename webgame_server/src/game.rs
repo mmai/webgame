@@ -167,9 +167,23 @@ impl<'gs, GameStateType: Default+GameState,
         self.universe().send(player_id, message).await;
     }
 
-    pub async fn broadcast_state(&self) {
-        let universe = self.universe();
+    pub async fn broadcast_current_state(&self) {
         let game_state = self.game_state.lock().await;
+        // self.broadcast_state(game_state).await;
+        let universe = self.universe();
+        for player_id in game_state.get_players().keys().copied() {
+            let snapshot = game_state.make_snapshot(player_id);
+            universe
+                .send(
+                    player_id,
+                    &Message::GameStateSnapshot(snapshot),
+                )
+                .await;
+        }
+    }
+
+    pub async fn broadcast_state(&self, game_state: &GameStateType) {
+        let universe = self.universe();
         for player_id in game_state.get_players().keys().copied() {
             let snapshot = game_state.make_snapshot(player_id);
             universe

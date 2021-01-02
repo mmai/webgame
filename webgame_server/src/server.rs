@@ -78,7 +78,7 @@ async fn on_websocket_connect<
             universe
                 .send(user.id, &Message::GameJoined(game.game_info()))
                 .await;
-            game.broadcast_state().await;
+            game.broadcast_current_state().await;
         }
     }
 
@@ -230,7 +230,7 @@ where
     universe
         .send(user_id, &Message::GameJoined(game.game_info()))
         .await;
-    game.broadcast_state().await;
+    game.broadcast_current_state().await;
     Ok(())
 }
 
@@ -241,7 +241,7 @@ where
 //     universe
 //         .send(user_id, &Message::GameJoined(game.game_info()))
 //         .await;
-//     game.broadcast_state().await;
+//     game.broadcast_current_state().await;
 //     Ok(())
 // }
 
@@ -254,7 +254,7 @@ async fn on_join_game<'de, GameStateType:GameState+Default, PlayEventT:Send+Seri
     universe
         .send(user_id, &Message::GameJoined(game.game_info()))
         .await;
-    game.broadcast_state().await;
+    game.broadcast_current_state().await;
     Ok(())
 }
 
@@ -320,7 +320,7 @@ async fn on_debug_game<'de, GameStateType:GameState+Default, PlayEventT:Send+Ser
         universe
             .debug_game(cmd.game_id, cmd.operation)
             .await?;
-        game.broadcast_state().await;
+        game.broadcast_current_state().await;
     }
 
     Ok(())
@@ -360,7 +360,7 @@ pub async fn on_player_continue<'de, GameStateType:GameState+Default, PlayEventT
 ) -> Result<(), ProtocolError> {
     if let Some(game) = universe.get_user_game(user_id).await {
         game.mark_player_ready(user_id).await;
-        game.broadcast_state().await;
+        game.broadcast_current_state().await;
     }
     Ok(())
 }
@@ -372,11 +372,11 @@ pub async fn on_player_mark_ready<'de, GameStateType:GameState+Default, PlayEven
     if let Some(game) = universe.get_user_game(user_id).await {
         if game.is_joinable().await {
             let mut needs_update = game.mark_player_ready(user_id).await;
-            game.broadcast_state().await;
+            game.broadcast_current_state().await;
             // This loop is used to broacast several states during init phase
             while needs_update {
                 needs_update = game.update_init_state().await;
-                game.broadcast_state().await;
+                game.broadcast_current_state().await;
             }
         }
     }

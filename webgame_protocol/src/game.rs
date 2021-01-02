@@ -52,13 +52,13 @@ pub trait GameManager<'a, Listener: GameEventsListener<Self::Event>> {
     type Event; 
     // fn register_listener(&mut self, listener: Arc<RefCell<T>>);
     // fn register_listener(&mut self, listener: std::rc::Weak<dyn GameEventsListener<Self::Event>>);
-    fn register_listener(&mut self, listener: &'a Listener);
+    fn register_listener(&mut self, listener: &'a mut Listener);
     fn unregister_listener(&mut self, listener: &'a Listener);
-    fn emit(&self, evt: Self::Event);
+    fn emit(&mut self, evt: Self::Event);
 }
 
 pub trait GameEventsListener<Event> {
-    fn notify(&self, event: &Event);
+    fn notify(&mut self, event: &Event);
 }
 
 pub trait GameStateSnapshot: Debug+Serialize+DeserializeOwned+Send+Sync { }
