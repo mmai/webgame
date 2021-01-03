@@ -44,6 +44,21 @@ pub trait GameState: Sync+Default+Send {
 
     fn set_variant(&mut self, variant: Variant<Self::VariantParameters>);
     fn manage_operation(&mut self, operation: Self::Operation);
+
+}
+
+pub trait GameManager<'a, Listener: GameEventsListener<Self::Event>> {
+    // type State: GameState;
+    type Event; 
+    // fn register_listener(&mut self, listener: Arc<RefCell<T>>);
+    // fn register_listener(&mut self, listener: std::rc::Weak<dyn GameEventsListener<Self::Event>>);
+    fn register_listener(&mut self, listener: &'a mut Listener);
+    fn unregister_listener(&mut self, listener: &'a Listener);
+    fn emit(&mut self, evt: Self::Event);
+}
+
+pub trait GameEventsListener<Event> {
+    fn notify(&mut self, event: &Event);
 }
 
 pub trait GameStateSnapshot: Debug+Serialize+DeserializeOwned+Send+Sync { }
