@@ -10,6 +10,8 @@ use warp::ws;
 use crate::game::Game;
 use crate::protocol::{Message, PlayerInfo, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, Variant};
 use crate::utils::generate_join_code;
+use crate::store::GameStore;
+use crate::store_print::PrintStore;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
@@ -59,6 +61,7 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
         state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
+        store: PrintStore<GameStateType>,
 }
 
 impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameStateType, PlayEventT> {
@@ -69,6 +72,7 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
                 games: HashMap::new(),
                 joinable_games: HashMap::new(),
             })),
+            store: PrintStore::new("/tmp/webtarot_store"),
         }
     }
 
@@ -322,5 +326,9 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
                 // do here.
             }
         }
+    }
+
+    pub async fn store_state(&self, game: &Game<GameStateType, PlayEventT>) -> bool {
+        self.store.save(game)
     }
 }
