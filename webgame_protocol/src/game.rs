@@ -23,7 +23,8 @@ pub struct GameExtendedInfo {
     pub players: Vec<Uuid>
 }
 
-pub trait GameState: Sync+Default+Send {
+//XXX is static lifetime a problem ?
+pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static { 
     type PlayerPos: Send;
     type PlayerRole;
     type GamePlayerState: PlayerState;

@@ -12,6 +12,7 @@ use crate::protocol::{Message, PlayerInfo, ProtocolError, ProtocolErrorKind, Gam
 use crate::utils::generate_join_code;
 use crate::store::GameStore;
 use crate::store_print::PrintStore;
+use crate::store_sled::SledStore;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
@@ -61,18 +62,20 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
         state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
-        store: PrintStore<GameStateType>,
+        store: SledStore<GameStateType>,
+        // store: PrintStore<GameStateType>,
 }
 
 impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameStateType, PlayEventT> {
-    pub fn new() -> Universe<GameStateType, PlayEventT> {
+    pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {
                 users: HashMap::new(),
                 games: HashMap::new(),
                 joinable_games: HashMap::new(),
             })),
-            store: PrintStore::new("/tmp/webtarot_store"),
+            // store: PrintStore::new(&db_uri),
+            store: SledStore::new(&db_uri),
         }
     }
 
@@ -108,6 +111,7 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
 
             let game = Arc::new(Game::new(join_code, self.clone(), variant));
             universe_state.games.insert(game.id(), game.clone());
+            // self.store.save(&game).await();
             universe_state
                 .joinable_games
                 .insert(game.join_code().to_string(), game.id());
@@ -329,6 +333,6 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     }
 
     pub async fn store_state(&self, game: &Game<GameStateType, PlayEventT>) -> bool {
-        self.store.save(game)
+        self.store.save(game).await
     }
 }

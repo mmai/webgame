@@ -404,16 +404,16 @@ pub async fn on_user_send_text<'de, GameStateType:GameState+Default, PlayEventT:
 }
 
 pub async fn serve<GamePlayCommand: Send+Debug+DeserializeOwned+'static, SetPlayerRoleCommand: Send+Debug+DeserializeOwned+'static,
-// pub async fn serve<'de, GamePlayCommand: Send+Debug+Deserialize<'de>, SetPlayerRoleCommand: Send+Debug+Deserialize<'de>,
 GameStateType:GameState+'static, PlayEventT:Serialize+Send+Sync+'static> (
     public_dir: String,
+    db_uri: &str,
     socket: SocketAddr,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
     on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
 ) 
 where GameStateType::VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static
 {
-    let universe = Arc::new(Universe::new());
+    let universe = Arc::new(Universe::new(db_uri));
     let make_svc = make_service_fn(move |_| {
         let universe = universe.clone();
         let pdir = public_dir.clone();

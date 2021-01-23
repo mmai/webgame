@@ -47,6 +47,12 @@ pub async fn launch<
              .value_name("PORT")
              .help("Port the server listen to")
              .takes_value(true))
+        .arg(Arg::with_name("databaseuri")
+             .short("u")
+             .long("database uri")
+             .value_name("DBURI")
+             .help("Uri of the database storing game states")
+             .takes_value(true))
         ;
     let matches = app.get_matches();
 
@@ -59,10 +65,13 @@ pub async fn launch<
     // let port = str_port.parse::<u16>().unwrap();
     let str_ip = matches.value_of("address").unwrap_or("127.0.0.1"); 
 
+    let db_uri = matches.value_of("databaseuri").unwrap_or("sled:/tmp/sled_webgame");
+
     let str_socket = format!("{}:{}", str_ip, str_port);
     if let Ok(socket) = str_socket.parse() {
         server::serve(
             String::from(public_dir),
+            db_uri,
             socket,
             on_gameplay,
             on_setplayerrole,

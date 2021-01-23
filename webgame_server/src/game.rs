@@ -16,7 +16,7 @@ use crate::protocol::{
 use crate::universe::Universe;
 
 //trait utilisé dans le store
-pub trait UniverseGame<GameStateType> {
+pub trait UniverseGame<GameStateType> : Send+Sync {
     // fn get_state(&self) -> &GameStateType;
     fn get_state(&self) -> &Arc<Mutex<GameStateType>>;
     fn get_info(&self) -> GameInfo;
@@ -178,9 +178,11 @@ impl<'gs, GameStateType: Default+GameState,
 
     pub async fn broadcast(&self, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventType>) {
         let universe = self.universe();
-        let game_state = self.game_state.lock().await;
-        for player_id in game_state.get_players().keys().copied() {
-            universe.send(player_id, message).await;
+        {
+            let game_state = self.game_state.lock().await;
+            for player_id in game_state.get_players().keys().copied() {
+                universe.send(player_id, message).await;
+            }
         }
         universe.store_state(&self).await;
     }
