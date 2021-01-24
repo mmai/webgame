@@ -62,7 +62,8 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
         state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
-        store: SledStore<GameStateType>,
+        store: dyn GameStore<GameStateType>,
+        // store: SledStore<GameStateType>,
         // store: PrintStore<GameStateType>,
 }
 

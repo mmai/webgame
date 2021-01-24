@@ -16,11 +16,7 @@ pub struct SledStore<GameStateType: GameState+Clone> {
     games: Tree<GameRecord<GameStateType>>,
 }
 
-
-#[async_trait]
-impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
-    type GameStateT = GameStateType;
-
+impl<GameStateType: GameState+Clone> SledStore<GameStateType> {
     fn new( path: &str ) -> Self {
         let games = sled_extensions::Config::default()
             .path(path).open()
@@ -32,6 +28,21 @@ impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
             games
         }
     }
+}
+
+#[async_trait]
+impl<GameStateType: GameState+Clone> GameStore<GameStateType> for SledStore<GameStateType> {
+    // fn new( path: &str ) -> Self {
+    //     let games = sled_extensions::Config::default()
+    //         .path(path).open()
+    //         .expect("Failed to open sled db")
+    //         .open_bincode_tree("games")
+    //         .expect("Failed to open games tree");
+    //     SledStore {
+    //         _phantom: PhantomData,
+    //         games
+    //     }
+    // }
 
 
     async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {

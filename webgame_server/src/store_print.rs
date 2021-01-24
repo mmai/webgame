@@ -10,9 +10,7 @@ pub struct PrintStore<GameStateType> {
 }
 
 #[async_trait]
-impl<GameStateType: GameState> GameStore for PrintStore<GameStateType> {
-// impl<GameStateType> GameStore for PrintStore {
-    type GameStateT = GameStateType;
+impl<GameStateType: GameState> GameStore<GameStateType> for PrintStore<GameStateType> {
 
     fn new( path: &str ) -> Self {
         println!("Creating dummy print store with path {}", path);

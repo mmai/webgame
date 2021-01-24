@@ -65,7 +65,7 @@ pub async fn launch<
     // let port = str_port.parse::<u16>().unwrap();
     let str_ip = matches.value_of("address").unwrap_or("127.0.0.1"); 
 
-    let db_uri = matches.value_of("databaseuri").unwrap_or("sled:/tmp/sled_webgame");
+    let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
 
     let str_socket = format!("{}:{}", str_ip, str_port);
     if let Ok(socket) = str_socket.parse() {
