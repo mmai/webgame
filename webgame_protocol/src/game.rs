@@ -1,3 +1,4 @@
+use chrono::{Utc, DateTime};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use serde::{Serialize, Deserialize, de::DeserializeOwned};
@@ -22,6 +23,24 @@ pub struct GameExtendedInfo {
     pub game: GameInfo,
     pub players: Vec<Uuid>
 }
+
+//Used for storing
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GameRecord<State: GameState> {
+    pub date_updated: DateTime<Utc>,
+    #[serde(deserialize_with = "State::deserialize")] //cf. https://github.com/serde-rs/serde/issues/1296
+    pub state: State,
+}
+
+impl<State: GameState> From<State> for GameRecord<State> {
+    fn from(state: State) -> Self {
+        GameRecord { 
+            date_updated: Utc::now(),
+            state
+        }
+    }
+}
+
 
 //XXX is static lifetime a problem ?
 pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static { 

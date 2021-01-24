@@ -6,8 +6,8 @@ use sled_extensions::bincode::Tree;
 use sled_extensions::DbExt; // for open_bincode_tree
 use sled_extensions::Error; // for open_bincode_tree
 
-use crate::protocol::GameState;
-use crate::store::{ GameStore, GameRecord };
+use crate::protocol::{ GameState, GameRecord };
+use crate::store::GameStore;
 use crate::game::{Game, UniverseGame};
 
 
@@ -16,10 +16,30 @@ pub struct SledStore<GameStateType: GameState+Clone> {
     games: Tree<GameRecord<GameStateType>>,
 }
 
+impl<GameStateType: GameState+Clone> SledStore<GameStateType> {
+    pub fn data(&self) -> &sled_extensions::structured::Tree<GameRecord<GameStateType>, sled_extensions::bincode::BincodeEncoding> {
+        &self.games
+    }
+}
+
+// impl<GameStateType: GameState> IntoIterator for SledStore<GameStateType> {
+//     type Item = GameRecord<GameStateType>;
+//     // type Item = sled::Result<(sled::IVec, sled::IVec)>;
+//     type IntoIter = sled_extensions::structured::Iter<Self::Item, sled_extensions::bincode::BincodeEncoding>;
+//
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.games.into_iter()
+//     }
+// }
 
 #[async_trait]
 impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
     type GameStateT = GameStateType;
+    // type ItemIterator = sled::Iter;
+    //
+    // fn iter(&self) -> Self::ItemIterator {
+    //     self.games.iter()
+    // }
 
     fn new( path: &str ) -> Self {
         let games = sled_extensions::Config::default()
@@ -48,4 +68,5 @@ impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
         };
         if let Err(_err) = do_steps() { false } else { true }
     }
+
 }

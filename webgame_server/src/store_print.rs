@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 use async_trait::async_trait;
 
-use crate::protocol::GameState;
-use crate::store::{ GameStore, GameRecord };
+use crate::protocol::{ GameState, GameRecord };
+use crate::store::GameStore;
 use crate::game::{Game, UniverseGame};
 
 pub struct PrintStore<GameStateType> {

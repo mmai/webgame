@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::game::{GameInfo, GameExtendedInfo};
+use crate::game::{GameInfo, GameExtendedInfo, GameRecord, GameState};
 use crate::player::PlayerInfo;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,6 +23,7 @@ pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, Debug
     DebugGame(DebugGameCommand<DebugOperation>), // Send an operation to the game
     ShowUuid, // get uuid of connected client : for use with debugUi
     ShowServerStatus, // get server infos : active games, players connected...
+    ShowServerGames, // get stored games
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Hash)]
@@ -106,6 +107,7 @@ pub enum Message<
     Connected,
     Pong,
     ServerStatus(ServerStatus),
+    // ServerStoredGames(ServerStoredGames<GamePlayerStateT>),
     Chat(ChatMessage),
     PlayerConnected(GamePlayerStateT),
     PlayerDisconnected(PlayerDisconnectedMessage),
@@ -118,6 +120,11 @@ pub enum Message<
     GameStateSnapshot(GameStateSnapshotT),
     DebugOperation(DebugOperationT)
 }
+
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub struct ServerStoredGames<StateT: GameState> {
+//     pub games: Vec<GameRecord<StateT>>,
+// }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerStatus {

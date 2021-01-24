@@ -8,7 +8,7 @@ use uuid::Uuid;
 use warp::ws;
 
 use crate::game::Game;
-use crate::protocol::{Message, PlayerInfo, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, Variant};
+use crate::protocol::{Message, PlayerInfo, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, Variant, GameRecord};
 use crate::utils::generate_join_code;
 use crate::store::GameStore;
 use crate::store_print::PrintStore;
@@ -87,6 +87,18 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
                 g.game_extended_info()
             } );
         futures::future::join_all(fgames).await
+    }
+
+    /// show all stored games
+    pub async fn show_stored_games(self: &Arc<Self>) -> Vec<GameRecord<GameStateType>> {
+        // let fgames = self.store.iter()
+        // let fgames: Result<Vec<GameRecord<GameStateType>>, _> = self.store.data().iter()
+        let fgames: Vec<GameRecord<GameStateType>> = self.store.data().iter()
+            .map(|res| res.map(|game| game.1))
+            .filter_map(Result::ok)
+        .collect();
+        fgames
+        // fgames.unwrap()
     }
 
     /// for debug purposes: show all the users connected to the server, except user_id

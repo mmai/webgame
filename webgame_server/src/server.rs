@@ -180,6 +180,7 @@ async fn on_user_message<
 
             //For debug purposes only
             Command::ShowServerStatus => on_server_status(universe, user_id).await,
+            Command::ShowServerGames => on_server_games(universe, user_id).await,
             Command::ShowUuid => on_show_uuid(universe, user_id).await,
             Command::DebugUi(data) => on_debug_ui(universe, data).await,
             Command::DebugGame(data) => on_debug_game(universe, data).await,
@@ -208,6 +209,7 @@ async fn on_user_message<
             Command::DebugUi(data) => on_debug_ui(universe, data).await,
             Command::DebugGame(data) => on_debug_game(universe, data).await,
             Command::ShowServerStatus => on_server_status(universe, user_id).await,
+            Command::ShowServerGames => on_server_games(universe, user_id).await,
 
             // this should not happen here.
             Command::Authenticate(..) => Err(ProtocolError::new(
@@ -286,6 +288,20 @@ async fn on_show_uuid<'de, GameStateType:GameState+Default, PlayEventT:Send+Seri
     universe
         .send(user_id, &Message::Chat(ChatMessage { player_id:pid, text:String::new() }))
         .await;
+    Ok(())
+}
+
+async fn on_server_games<'de, GameStateType:GameState+Default, PlayEventT:Send+Serialize>(
+    universe: Arc<Universe<GameStateType, PlayEventT>>,
+    user_id: Uuid,
+    ) -> Result<(), ProtocolError> {
+    let games = universe.show_stored_games().await;
+    for g in games {
+        println!("game updated on {:?}", g.date_updated);
+    }
+    // universe
+        // .send(user_id, &Message::ServerStoredGames(ServerStoredGames { games }))
+        // .await;
     Ok(())
 }
 
