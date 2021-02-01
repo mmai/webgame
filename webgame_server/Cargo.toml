@@ -1,6 +1,6 @@
 [package]
 name = "webgame_server"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Henri Bourcereau <henri@bourcereau.fr>"]
 edition = "2018"
 

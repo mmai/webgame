@@ -28,18 +28,28 @@ pub struct GameExtendedInfo {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GameRecord<State: GameState> {
     pub date_updated: DateTime<Utc>,
+    pub info: GameInfo,
     #[serde(deserialize_with = "State::deserialize")] //cf. https://github.com/serde-rs/serde/issues/1296
     pub state: State,
 }
 
-impl<State: GameState> From<State> for GameRecord<State> {
-    fn from(state: State) -> Self {
+impl<State: GameState> GameRecord<State> {
+    pub fn create(state: State, info: GameInfo) -> Self {
         GameRecord { 
             date_updated: Utc::now(),
+            info,
             state
         }
     }
 }
+// impl<State: GameState> From<State> for GameRecord<State> {
+//     fn from(state: State) -> Self {
+//         GameRecord { 
+//             date_updated: Utc::now(),
+//             state
+//         }
+//     }
+// }
 
 
 //XXX is static lifetime a problem ?

@@ -57,16 +57,22 @@ impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
     async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
     // async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> Result<(), Error> {
         let info = game.get_info();
-        println!("Storing {:?}", info);
+        // println!("Storing {:?}", info);
 
         let game_state = game.get_state(); // Arc<Mutex<GameState>>
         let game_state = game_state.lock().await; // MutexGuard<GameState>
         let mystate = (*game_state).clone();
         let do_steps = || -> Result<(), Error> {
-            self.games.insert(info.game_id.as_bytes(), mystate.into())?;
+            // self.games.insert(info.game_id.as_bytes(), mystate.into())?;
+            self.games.insert(info.game_id.as_bytes(), GameRecord::create(mystate, info.clone()))?;
             Ok(())
         };
         if let Err(_err) = do_steps() { false } else { true }
+    }
+
+    async fn delete(&self, game_id: Uuid) -> bool {
+        let res = self.games.remove(game_id.as_bytes());
+        if let Err(_err) = res { false } else { true }
     }
 
 }

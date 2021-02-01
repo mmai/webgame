@@ -62,12 +62,13 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
         state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
-        store: SledStore<GameStateType>,
+        store: Arc<SledStore<GameStateType>>,
         // store: PrintStore<GameStateType>,
 }
 
 impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameStateType, PlayEventT> {
-    pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
+    // pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
+    pub fn new(store: Arc<SledStore<GameStateType>>) -> Universe<GameStateType, PlayEventT> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {
                 users: HashMap::new(),
@@ -75,7 +76,7 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
                 joinable_games: HashMap::new(),
             })),
             // store: PrintStore::new(&db_uri),
-            store: SledStore::new(&db_uri),
+            store,
         }
     }
 

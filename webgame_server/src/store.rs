@@ -1,4 +1,5 @@
 use chrono::{Utc, DateTime};
+use uuid::Uuid;
 use serde::{Serialize, Deserialize};
 use async_trait::async_trait;
 
@@ -14,6 +15,7 @@ pub trait GameStore {
 
     fn new( path: &str ) -> Self;
     async fn save(&self, game: &dyn UniverseGame<Self::GameStateT> ) -> bool;
+    async fn delete(&self, game_id: Uuid ) -> bool;
     // fn iter(&self) -> Self::ItemIterator;
 }
 

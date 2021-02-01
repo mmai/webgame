@@ -1,10 +1,10 @@
 [package]
 name = "webgame_protocol"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Henri Bourcereau <henri@bourcereau.fr>"]
 edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.105", features = ["derive", "rc"] }
 uuid = { version = "0.8.1", features = ["serde"] }
-chrono = "0.4.19"
+chrono = { version = "0.4.19", features = ["serde"] }

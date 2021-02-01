@@ -22,6 +22,7 @@ use crate::protocol::{
     GameState,
 };
 use crate::universe::Universe;
+use crate::store_sled::SledStore;
 
 // see https://users.rust-lang.org/t/how-to-store-async-function-pointer/38343/2
 pub type GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT> = fn( Arc<Universe<GameStateType, PlayEventT>>, Uuid, GamePlayCommand ) 
@@ -422,14 +423,15 @@ pub async fn on_user_send_text<'de, GameStateType:GameState+Default, PlayEventT:
 pub async fn serve<GamePlayCommand: Send+Debug+DeserializeOwned+'static, SetPlayerRoleCommand: Send+Debug+DeserializeOwned+'static,
 GameStateType:GameState+'static, PlayEventT:Serialize+Send+Sync+'static> (
     public_dir: String,
-    db_uri: &str,
+    // db_uri: &str,
+    store: Arc<SledStore<GameStateType>>,
     socket: SocketAddr,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
     on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
 ) 
 where GameStateType::VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static
 {
-    let universe = Arc::new(Universe::new(db_uri));
+    let universe = Arc::new(Universe::new(store));
     let make_svc = make_service_fn(move |_| {
         let universe = universe.clone();
         let pdir = public_dir.clone();

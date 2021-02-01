@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 use async_trait::async_trait;
+use uuid::Uuid;
 
 use crate::protocol::{ GameState, GameRecord };
 use crate::store::GameStore;
@@ -24,6 +25,11 @@ impl<GameStateType: GameState> GameStore for PrintStore<GameStateType> {
     async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
     // fn save<State: GameState>(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
         println!("Storing {:?}", game.get_info());
+        true
+    }
+
+    async fn delete(&self, game_id: Uuid ) -> bool {
+        println!("Deleting {}", game_id);
         true
     }
 }
