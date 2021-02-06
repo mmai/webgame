@@ -95,7 +95,7 @@ pub async fn launch<
     let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
     let archives_dir = matches.value_of("archives_directory").unwrap_or("webgame_archives");
     let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
-    let cleaner_check_interval = matches.value_of("archives_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
+    let cleaner_check_interval = matches.value_of("archive_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
     let store = Arc::new(SledStore::new(&db_uri));
 
     let str_socket = format!("{}:{}", str_ip, str_port);
