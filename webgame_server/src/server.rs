@@ -22,6 +22,7 @@ use crate::protocol::{
     GameState,
 };
 use crate::universe::Universe;
+use crate::store_sled::SledStore;
 
 // see https://users.rust-lang.org/t/how-to-store-async-function-pointer/38343/2
 pub type GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT> = fn( Arc<Universe<GameStateType, PlayEventT>>, Uuid, GamePlayCommand ) 
@@ -180,6 +181,7 @@ async fn on_user_message<
 
             //For debug purposes only
             Command::ShowServerStatus => on_server_status(universe, user_id).await,
+            Command::ShowServerGames => on_server_games(universe, user_id).await,
             Command::ShowUuid => on_show_uuid(universe, user_id).await,
             Command::DebugUi(data) => on_debug_ui(universe, data).await,
             Command::DebugGame(data) => on_debug_game(universe, data).await,
@@ -208,6 +210,7 @@ async fn on_user_message<
             Command::DebugUi(data) => on_debug_ui(universe, data).await,
             Command::DebugGame(data) => on_debug_game(universe, data).await,
             Command::ShowServerStatus => on_server_status(universe, user_id).await,
+            Command::ShowServerGames => on_server_games(universe, user_id).await,
 
             // this should not happen here.
             Command::Authenticate(..) => Err(ProtocolError::new(
@@ -286,6 +289,20 @@ async fn on_show_uuid<'de, GameStateType:GameState+Default, PlayEventT:Send+Seri
     universe
         .send(user_id, &Message::Chat(ChatMessage { player_id:pid, text:String::new() }))
         .await;
+    Ok(())
+}
+
+async fn on_server_games<'de, GameStateType:GameState+Default, PlayEventT:Send+Serialize>(
+    universe: Arc<Universe<GameStateType, PlayEventT>>,
+    user_id: Uuid,
+    ) -> Result<(), ProtocolError> {
+    let games = universe.show_stored_games().await;
+    for g in games {
+        println!("game updated on {:?}", g.date_updated);
+    }
+    // universe
+        // .send(user_id, &Message::ServerStoredGames(ServerStoredGames { games }))
+        // .await;
     Ok(())
 }
 
@@ -404,16 +421,17 @@ pub async fn on_user_send_text<'de, GameStateType:GameState+Default, PlayEventT:
 }
 
 pub async fn serve<GamePlayCommand: Send+Debug+DeserializeOwned+'static, SetPlayerRoleCommand: Send+Debug+DeserializeOwned+'static,
-// pub async fn serve<'de, GamePlayCommand: Send+Debug+Deserialize<'de>, SetPlayerRoleCommand: Send+Debug+Deserialize<'de>,
 GameStateType:GameState+'static, PlayEventT:Serialize+Send+Sync+'static> (
     public_dir: String,
+    // db_uri: &str,
+    store: Arc<SledStore<GameStateType>>,
     socket: SocketAddr,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
     on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
 ) 
 where GameStateType::VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static
 {
-    let universe = Arc::new(Universe::new());
+    let universe = Arc::new(Universe::new(store));
     let make_svc = make_service_fn(move |_| {
         let universe = universe.clone();
         let pdir = public_dir.clone();

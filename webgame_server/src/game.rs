@@ -1,4 +1,5 @@
 use std::sync::{Arc, Weak};
+use futures::executor::block_on;
 use tokio::sync::Mutex;
 use serde::Serialize;
 
@@ -13,6 +14,26 @@ use crate::protocol::{
     Variant,
 };
 use crate::universe::Universe;
+
+//trait utilisé dans le store
+pub trait UniverseGame<GameStateType> : Send+Sync {
+    // fn get_state(&self) -> &GameStateType;
+    fn get_state(&self) -> &Arc<Mutex<GameStateType>>;
+    fn get_info(&self) -> GameInfo;
+}
+
+impl<GameStateType: GameState, PlayEventType: Send+Serialize> UniverseGame<GameStateType> for Game<GameStateType, PlayEventType> {
+    // fn get_state(&self) -> &GameStateType {
+    fn get_state(&self) -> &Arc<Mutex<GameStateType>> {
+        self.state_handle()
+    }
+
+    fn get_info(&self) -> GameInfo {
+        let info = self.game_info().clone();
+        info
+    }
+}
+// fin trait utilisé dans le store
 
 pub struct Game<GameStateType: GameState, PlayEventType> {
     pub id: Uuid,
@@ -157,10 +178,13 @@ impl<'gs, GameStateType: Default+GameState,
 
     pub async fn broadcast(&self, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventType>) {
         let universe = self.universe();
-        let game_state = self.game_state.lock().await;
-        for player_id in game_state.get_players().keys().copied() {
-            universe.send(player_id, message).await;
+        {
+            let game_state = self.game_state.lock().await;
+            for player_id in game_state.get_players().keys().copied() {
+                universe.send(player_id, message).await;
+            }
         }
+        universe.store_state(&self).await;
     }
 
     pub async fn send(&self, player_id: Uuid, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventType>) {
