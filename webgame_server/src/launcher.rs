@@ -48,9 +48,19 @@ pub async fn launch<
              .takes_value(true))
         .arg(Arg::with_name("archives")
              .short("c")
-             .long("archives directory")
+             .long("archives-directory")
              .value_name("ARCHIVES")
              .help("Directory path where game archives are stored")
+             .takes_value(true))
+        .arg(Arg::with_name("archive_delay")
+             .long("archive-delay")
+             .value_name("ARCHIVEDELAY")
+             .help("Retention period in hours after wich the game is archived")
+             .takes_value(true))
+        .arg(Arg::with_name("archive_check")
+             .long("archive-check")
+             .value_name("ARCHIVECHECK")
+             .help("Archivage check period in minutes")
              .takes_value(true))
         .arg(Arg::with_name("address")
              .short("a")
@@ -66,7 +76,7 @@ pub async fn launch<
              .takes_value(true))
         .arg(Arg::with_name("databaseuri")
              .short("u")
-             .long("database uri")
+             .long("db-uri")
              .value_name("DBURI")
              .help("Uri of the database storing game states")
              .takes_value(true))
@@ -84,14 +94,14 @@ pub async fn launch<
 
     let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
     let archives_dir = matches.value_of("archives_directory").unwrap_or("webgame_archives");
+    let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
+    let cleaner_check_interval = matches.value_of("archives_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
     let store = Arc::new(SledStore::new(&db_uri));
 
     let str_socket = format!("{}:{}", str_ip, str_port);
     if let Ok(socket) = str_socket.parse() {
 
         // XXX Cleaning task : should be defined in another module ?
-        let cleaner_check_interval = 3; // seconds
-        let cleaner_archive_after = 2; // minutes
         let cleaner_store = Arc::clone(&store);
         let cleaner_archives = String::from(archives_dir);
 
@@ -105,7 +115,7 @@ pub async fn launch<
                 let fgames: Vec<GameRecord<GameStateType>> = cleaner_store.data().iter()
                     .map(|res| res.map(|game| game.1))
                     .filter_map(Result::ok)
-                    .filter(|d| (now - d.date_updated.time()).num_minutes() > cleaner_archive_after )
+                    .filter(|d| (now - d.date_updated.time()).num_hours() > cleaner_archive_after )
                     .collect();
                 // println!("{} games to archive", fgames.len());
                 for g in fgames {
@@ -117,7 +127,7 @@ pub async fn launch<
                         }
                     }
                 }
-                thread::sleep(Duration::from_millis(1000 * cleaner_check_interval));
+                thread::sleep(Duration::from_secs(60 * cleaner_check_interval));
             }
         });
 
