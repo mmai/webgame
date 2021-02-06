@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.2
+
+- store
+
 ## 0.6.1
 
 - events management
