@@ -14,6 +14,7 @@ pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, Debug
     JoinGame(JoinGameCommand),
     LeaveGame,
     MarkReady,
+    InviteBot,
     Continue,
 
     GamePlay(GamePlayCommand),
