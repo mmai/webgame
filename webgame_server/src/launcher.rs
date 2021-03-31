@@ -141,7 +141,7 @@ pub async fn launch<
         });
 
         let bots_socket = String::from(str_bots_socket);
-        let wsocket = String::from(str_socket);
+        let wsocket = format!("ws://{}", str_socket);
         thread::spawn(move || {
             bots_server_start(&bots_socket, &wsocket);
         });
