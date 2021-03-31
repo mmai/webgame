@@ -14,6 +14,10 @@ use crate::store::GameStore;
 use crate::store_print::PrintStore;
 use crate::store_sled::SledStore;
 
+use std::os::unix::net::UnixStream;
+use std::io::Write;
+use std::sync::Mutex;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
     pub id: Uuid,
@@ -63,12 +67,14 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 pub struct Universe<GameStateType: GameState, PlayEventType> {
         state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
         store: Arc<SledStore<GameStateType>>,
+        str_bots_socket: String,
+        // bots_stream: Arc<Mutex<Option<UnixStream>>>,
         // store: PrintStore<GameStateType>,
 }
 
 impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameStateType, PlayEventT> {
     // pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
-    pub fn new(store: Arc<SledStore<GameStateType>>) -> Universe<GameStateType, PlayEventT> {
+    pub fn new(store: Arc<SledStore<GameStateType>>, str_bots_socket: String) -> Universe<GameStateType, PlayEventT> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {
                 users: HashMap::new(),
@@ -77,6 +83,28 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
             })),
             // store: PrintStore::new(&db_uri),
             store,
+            str_bots_socket,
+        }
+    }
+
+    pub fn invite_bot(&self, join_code: &str) -> Result<(), ProtocolError> {
+        let path_bots_socket = std::path::Path::new(&self.str_bots_socket);
+        let bots_stream = UnixStream::connect(path_bots_socket).ok();
+        if let Some(mut bots_socket) = bots_stream {
+            let result = bots_socket.write(join_code.as_bytes())
+                .and(Ok(()))
+                .or( 
+                    Err(ProtocolError::new(
+                            ProtocolErrorKind::NotFound,
+                            "bots not writable",))
+                );
+            // bots_socket.shutdown(Shutdown::Write).expect("shutdown function failed");
+            return result;
+        } else {
+            Err(ProtocolError::new(
+                    ProtocolErrorKind::NotFound,
+                    "bots not available",
+            ))
         }
     }
 

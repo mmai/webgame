@@ -13,6 +13,10 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 use warp::{ws, Filter};
 
+//For bots socket
+use std::os::unix::net::UnixStream;
+use std::sync::Mutex;
+
 //For keep alive ping pong
 // use std::time::Duration;
 use crate::protocol::{
@@ -43,6 +47,7 @@ async fn on_websocket_connect<
     ws: ws::WebSocket,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
     on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>,
+    // str_bots_socket: String,
     ) 
  where GameStateType::VariantParameters:Debug+DeserializeOwned+Send+Serialize
 { 
@@ -199,6 +204,7 @@ async fn on_user_message<
             Command::JoinGame(cmd) => on_join_game(universe, user_id, cmd).await,
             Command::MarkReady => on_player_mark_ready(universe, user_id).await,
             Command::LeaveGame => on_leave_game(universe, user_id).await,
+            Command::InviteBot => on_invite_bot(universe, user_id).await,
 
             Command::Continue => on_player_continue(universe, user_id).await,
             Command::SendText(cmd) => on_user_send_text(universe, user_id, cmd).await,
@@ -258,6 +264,21 @@ async fn on_join_game<'de, GameStateType:GameState+Default, PlayEventT:Send+Seri
         .send(user_id, &Message::GameJoined(game.game_info()))
         .await;
     game.broadcast_current_state().await;
+    Ok(())
+}
+
+async fn on_invite_bot<'de, GameStateType:GameState+Default, PlayEventT:Send+Serialize>(
+    universe: Arc<Universe<GameStateType, PlayEventT>>,
+    user_id: Uuid,
+    ) -> Result<(), ProtocolError> {
+    if let Some(game) = universe.get_user_game(user_id).await {
+        if game.is_joinable().await {
+            log::info!( "invite bot with code {}", game.join_code());
+            universe.invite_bot(game.join_code())?;
+            // let bots = universe.get_bots_stream();
+            game.broadcast_current_state().await;
+        }
+    }
     Ok(())
 }
 
@@ -425,13 +446,14 @@ GameStateType:GameState+'static, PlayEventT:Serialize+Send+Sync+'static> (
     public_dir: String,
     // db_uri: &str,
     store: Arc<SledStore<GameStateType>>,
+    str_bots_socket: String,
     socket: SocketAddr,
     on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
     on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
 ) 
 where GameStateType::VariantParameters:Serialize+Debug+DeserializeOwned+Send+Sync+'static
 {
-    let universe = Arc::new(Universe::new(store));
+    let universe = Arc::new(Universe::new(store, str_bots_socket));
     let make_svc = make_service_fn(move |_| {
         let universe = universe.clone();
         let pdir = public_dir.clone();
@@ -446,7 +468,7 @@ where GameStateType::VariantParameters:Serialize+Debug+DeserializeOwned+Send+Syn
                 guid_uuid,
                 universe: Arc<Universe<GameStateType, PlayEventT>>,
                 on_gameplay: GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
-                on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
+                on_setplayerrole: SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>,
                 | {
                 // when the connection is upgraded to a websocket
                 ws.on_upgrade(move |ws| on_websocket_connect(universe, guid_uuid, ws, on_gameplay, on_setplayerrole))

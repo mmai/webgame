@@ -27,7 +27,8 @@ pub async fn launch<
         // version: &'static str,
         author: &'static str,
         on_gameplay: server::GamePlayHandler<GamePlayCommand, GameStateType, PlayEventT>,
-        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>
+        on_setplayerrole: server::SetPlayerRoleHandler<SetPlayerRoleCommand, GameStateType, PlayEventT>,
+        bots_server_start: fn(&str, &str), 
     ) 
 
     where GameStateType::VariantParameters: Debug+DeserializeOwned+Serialize+Send+Sync+'static
@@ -45,6 +46,12 @@ pub async fn launch<
              .long("directory")
              .value_name("ROOT")
              .help("Directory path of the static files")
+             .takes_value(true))
+        .arg(Arg::with_name("bot")
+             .short("b")
+             .long("bot socket")
+             .value_name("BOT")
+             .help("Unix socket file of the bot server")
              .takes_value(true))
         .arg(Arg::with_name("archives")
              .short("c")
@@ -92,6 +99,8 @@ pub async fn launch<
     // let port = str_port.parse::<u16>().unwrap();
     let str_ip = matches.value_of("address").unwrap_or("127.0.0.1"); 
 
+    let str_bots_socket = matches.value_of("bot").unwrap_or("/tmp/webgame-bots.sock"); 
+
     let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
     let archives_dir = matches.value_of("archives_directory").unwrap_or("webgame_archives");
     let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
@@ -131,9 +140,17 @@ pub async fn launch<
             }
         });
 
+        let bots_socket = String::from(str_bots_socket);
+        let wsocket = format!("ws://{}", str_socket);
+        thread::spawn(move || {
+            bots_server_start(&bots_socket, &wsocket);
+        });
+
         server::serve(
             String::from(public_dir),
             store,
+            String::from(str_bots_socket),
+            // bots_stream,
             socket,
             on_gameplay,
             on_setplayerrole,
