@@ -102,7 +102,7 @@ pub async fn launch<
     let str_bots_socket = matches.value_of("bot").unwrap_or("/tmp/webgame-bots.sock"); 
 
     let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
-    let archives_dir = matches.value_of("archives_directory").unwrap_or("webgame_archives");
+    let archives_dir = matches.value_of("archives").unwrap_or("webgame_archives");
     let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
     let cleaner_check_interval = matches.value_of("archive_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
     let store = Arc::new(SledStore::new(&db_uri));
@@ -115,6 +115,7 @@ pub async fn launch<
         let cleaner_archives = String::from(archives_dir);
 
         if !Path::new(&cleaner_archives).exists(){
+            println!("Try to create archives directory {:?}", cleaner_archives);
             fs::create_dir(&cleaner_archives).unwrap();
         }
 
