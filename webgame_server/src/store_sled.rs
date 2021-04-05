@@ -57,7 +57,7 @@ impl<GameStateType: GameState+Clone> GameStore for SledStore<GameStateType> {
     async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
     // async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> Result<(), Error> {
         let info = game.get_info();
-        // println!("Storing {:?}", info);
+        println!("Storing {:?}", info);
 
         let game_state = game.get_state(); // Arc<Mutex<GameState>>
         let game_state = game_state.lock().await; // MutexGuard<GameState>
