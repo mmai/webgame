@@ -243,17 +243,6 @@ where
     Ok(())
 }
 
-// async fn on_new_game<'de, GameStateType:GameState+Default, GamePlayerStateT:PlayerState, GameStateSnapshotT:GameStateSnapshot, DebugOperationT:DebugOperation, PlayEventT:Send+Serialize, VariantParameters>(universe: Arc<Universe<GameStateType, PlayEventT>>, user_id: Uuid, variant: Variant<VariantParameters>) -> Result<(), ProtocolError> {
-//     universe.remove_user_from_game(user_id).await;
-//     let game = universe.new_game(variant).await;
-//     game.add_player(user_id).await;
-//     universe
-//         .send(user_id, &Message::GameJoined(game.game_info()))
-//         .await;
-//     game.broadcast_current_state().await;
-//     Ok(())
-// }
-
 async fn on_join_game<'de, GameStateType:GameState+Default, PlayEventT:Send+Serialize>(
     universe: Arc<Universe<GameStateType, PlayEventT>>,
     user_id: Uuid,

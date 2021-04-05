@@ -37,7 +37,7 @@ pub async fn launch<
     pretty_env_logger::init();
 
 
-    let app = App::new("Webtarot")
+    let app = App::new(name)
         .version(version.as_str())
         .author(author)
         .about(name)
