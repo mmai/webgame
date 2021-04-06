@@ -16,7 +16,7 @@ impl<GameStateType: GameState> GameStore for PrintStore<GameStateType> {
     type GameStateT = GameStateType;
 
     fn new( path: &str ) -> Self {
-        println!("Creating dummy print store with path {}", path);
+        // println!("Creating dummy print store with path {}", path);
         PrintStore {
             _phantom: PhantomData
         }
@@ -24,12 +24,12 @@ impl<GameStateType: GameState> GameStore for PrintStore<GameStateType> {
 
     async fn save(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
     // fn save<State: GameState>(&self, game: &dyn UniverseGame<GameStateType> ) -> bool {
-        println!("Storing {:?}", game.get_info());
+        // println!("Storing {:?}", game.get_info());
         true
     }
 
     async fn delete(&self, game_id: Uuid ) -> bool {
-        println!("Deleting {}", game_id);
+        // println!("Deleting {}", game_id);
         true
     }
 }
