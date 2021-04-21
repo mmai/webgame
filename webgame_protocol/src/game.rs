@@ -66,6 +66,7 @@ pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static 
     fn add_player(&mut self, player_info: PlayerInfo) -> Self::PlayerPos; 
     fn remove_player(&mut self, player_id: Uuid) -> bool;
     fn set_player_role(&mut self, player_id: Uuid, role: Self::PlayerRole);
+    fn get_player_role(&self, player_id: Uuid) -> Option<Self::PlayerRole>;
     fn player_by_pos(&self, position: Self::PlayerPos) -> Option<&Self::GamePlayerState>;
     fn make_snapshot(&self, player_id: Uuid) -> Self::Snapshot;
     fn set_player_ready(&mut self, player_id: Uuid) -> bool;
