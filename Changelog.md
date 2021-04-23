@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.5
+
+- add get_player_role
+
+## 0.7.1
+
+- fix archives parameter
+
 ## 0.7.0
 
 - bots
