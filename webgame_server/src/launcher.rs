@@ -16,6 +16,8 @@ use crate::server;
 use crate::store::GameStore;
 use crate::store_sled::SledStore;
 
+extern crate pretty_env_logger;
+
 pub async fn launch<
     GamePlayCommand:Debug+Send+DeserializeOwned+'static,
     SetPlayerRoleCommand: Debug+Send+DeserializeOwned+'static,
@@ -62,7 +64,8 @@ pub async fn launch<
         .arg(Arg::with_name("archive_delay")
              .long("archive-delay")
              .value_name("ARCHIVEDELAY")
-             .help("Retention period in hours after wich the game is archived")
+             .help("Retention period in minutes after wich the game is archived")
+             // .help("Retention period in hours after wich the game is archived")
              .takes_value(true))
         .arg(Arg::with_name("archive_check")
              .long("archive-check")
@@ -125,15 +128,17 @@ pub async fn launch<
                 let fgames: Vec<GameRecord<GameStateType>> = cleaner_store.data().iter()
                     .map(|res| res.map(|game| game.1))
                     .filter_map(Result::ok)
-                    .filter(|d| (now - d.date_updated.time()).num_hours() > cleaner_archive_after )
+                    // .filter(|d| (now - d.date_updated.time()).num_hours() > cleaner_archive_after )
+                    .filter(|d| (now - d.date_updated.time()).num_minutes() > cleaner_archive_after )
                     .collect();
-                // println!("{} games to archive", fgames.len());
+                debug!("{} games to archive", fgames.len());
                 for g in fgames {
+                    debug!("trying to save {}", &g.info.game_id);
                     let filename = format!("{}/{}.json", cleaner_archives, &g.info.game_id);
                     if let Ok(_ok) = serde_json::to_writer(&File::create(&filename).unwrap(), &g) {
-                        // println!("stored {}", &filename);
+                        debug!("stored {}", &filename);
                         if block_on(cleaner_store.delete(g.info.game_id)) {
-                            // println!("and deleted.. ");
+                            debug!("and deleted.. ");
                         }
                     }
                 }
@@ -157,7 +162,7 @@ pub async fn launch<
             on_setplayerrole,
             ).await;
     } else {
-        println!("Could not parse ip / port {}", str_socket);
+        error!("Could not parse ip / port {}", str_socket);
     }
 }
 
