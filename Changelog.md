@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.6
+
+- debug infos on launcher
+
 ## 0.7.5
 
 - add get_player_role
