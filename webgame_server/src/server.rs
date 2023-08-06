@@ -10,6 +10,7 @@ use serde::{Serialize, de::DeserializeOwned};
 use futures::{FutureExt, StreamExt};
 use hyper::{service::make_service_fn, Server};
 use tokio::sync::mpsc;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
 use warp::{ws, Filter};
 
@@ -53,6 +54,8 @@ async fn on_websocket_connect<
 { 
     let (user_ws_tx, mut user_ws_rx) = ws.split();
     let (tx, rx) = mpsc::unbounded_channel();
+    // let (tx, rx) = mpsc::unbounded_channel::<Result<warp::ws::Message, warp::Error>>();
+    let rx = UnboundedReceiverStream::new(rx);
 
     tokio::task::spawn(rx.forward(user_ws_tx).map(|result| {
         if let Err(e) = result {

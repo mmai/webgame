@@ -1,6 +1,6 @@
 [package]
 name = "webgame_server"
-version = "0.7.5"
+version = "0.7.7"
 authors = ["Henri Bourcereau <henri@bourcereau.fr>"]
 edition = "2018"
 
@@ -26,3 +26,4 @@ chrono = "0.4.19"
 sled = "0.34.6"
 sled-extensions = { version = "0.2.0", features = ["bincode"]}
 async-trait = "0.1.42"
+tokio-stream = "0.1.14"
