@@ -1,12 +1,18 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::game::{GameInfo, GameExtendedInfo, GameRecord, GameState};
+use crate::game::{GameExtendedInfo, GameInfo, GameRecord, GameState};
 use crate::player::PlayerInfo;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "cmd", rename_all = "snake_case")]
-pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, DebugOperation, VariantCommand> {
+pub enum Command<
+    GamePlayCommand,
+    SetPlayerRoleCommand,
+    GameStateSnapshot,
+    DebugOperation,
+    VariantCommand,
+> {
     Ping,
     Authenticate(AuthenticateCommand),
     SendText(SendTextCommand),
@@ -22,9 +28,9 @@ pub enum Command<GamePlayCommand, SetPlayerRoleCommand, GameStateSnapshot, Debug
 
     DebugUi(DebugUiCommand<GameStateSnapshot>), // Used to send a custom state to a client, allows to quickly view the UI at a given state of the game without having to play all the hands leading to this state.
     DebugGame(DebugGameCommand<DebugOperation>), // Send an operation to the game
-    ShowUuid, // get uuid of connected client : for use with debugUi
+    ShowUuid,         // get uuid of connected client : for use with debugUi
     ShowServerStatus, // get server infos : active games, players connected...
-    ShowServerGames, // get stored games
+    ShowServerGames,  // get stored games
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Hash)]
@@ -104,7 +110,8 @@ pub enum Message<
     GamePlayerStateT,
     GameStateSnapshotT: Send,
     DebugOperationT: Send,
-    PlayEventT: Send> {
+    PlayEventT: Send,
+> {
     Connected,
     Pong,
     ServerStatus(ServerStatus),
@@ -119,7 +126,8 @@ pub enum Message<
     Error(ProtocolError),
     PlayEvent(PlayEventT),
     GameStateSnapshot(GameStateSnapshotT),
-    DebugOperation(DebugOperationT)
+    DebugOperation(DebugOperationT),
+    DebugResult { data: String },
 }
 
 // #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -1,7 +1,7 @@
-use chrono::{Utc, DateTime};
+use chrono::{DateTime, Utc};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
-use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use uuid::Uuid;
 
 use crate::player::{PlayerInfo, PlayerState};
@@ -21,7 +21,7 @@ pub struct Variant<VariantParameters> {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GameExtendedInfo {
     pub game: GameInfo,
-    pub players: Vec<Uuid>
+    pub players: Vec<Uuid>,
 }
 
 //Used for storing
@@ -29,31 +29,33 @@ pub struct GameExtendedInfo {
 pub struct GameRecord<State: GameState> {
     pub date_updated: DateTime<Utc>,
     pub info: GameInfo,
-    #[serde(deserialize_with = "State::deserialize")] //cf. https://github.com/serde-rs/serde/issues/1296
+    #[serde(deserialize_with = "State::deserialize")]
+    //cf. https://github.com/serde-rs/serde/issues/1296
     pub state: State,
 }
 
 impl<State: GameState> GameRecord<State> {
     pub fn create(state: State, info: GameInfo) -> Self {
-        GameRecord { 
+        GameRecord {
             date_updated: Utc::now(),
             info,
-            state
+            state,
         }
     }
 }
 // impl<State: GameState> From<State> for GameRecord<State> {
 //     fn from(state: State) -> Self {
-//         GameRecord { 
+//         GameRecord {
 //             date_updated: Utc::now(),
 //             state
 //         }
 //     }
 // }
 
-
 //XXX is static lifetime a problem ?
-pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static { 
+pub trait GameState:
+    Sync + Default + Send + Serialize + DeserializeOwned + Clone + 'static
+{
     type PlayerPos: Send;
     type PlayerRole;
     type GamePlayerState: PlayerState;
@@ -63,7 +65,7 @@ pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static 
 
     fn is_joinable(&self) -> bool;
     fn get_players(&self) -> &BTreeMap<Uuid, Self::GamePlayerState>;
-    fn add_player(&mut self, player_info: PlayerInfo) -> Self::PlayerPos; 
+    fn add_player(&mut self, player_info: PlayerInfo) -> Self::PlayerPos;
     fn remove_player(&mut self, player_id: Uuid) -> bool;
     fn set_player_role(&mut self, player_id: Uuid, role: Self::PlayerRole);
     fn get_player_role(&self, player_id: Uuid) -> Option<Self::PlayerRole>;
@@ -74,13 +76,13 @@ pub trait GameState: Sync+Default+Send+Serialize+DeserializeOwned+Clone+'static 
     fn set_player_not_ready(&mut self, player_id: Uuid);
 
     fn set_variant(&mut self, variant: Variant<Self::VariantParameters>);
-    fn manage_operation(&mut self, operation: Self::Operation);
-
+    fn manage_operation(&mut self, operation: Self::Operation) -> Option<String>;
+    fn debug_bychat(&mut self, operation: &str) -> Option<String>;
 }
 
 pub trait GameManager<'a, Listener: GameEventsListener<Self::Event>> {
     // type State: GameState;
-    type Event; 
+    type Event;
     // fn register_listener(&mut self, listener: Arc<RefCell<T>>);
     // fn register_listener(&mut self, listener: std::rc::Weak<dyn GameEventsListener<Self::Event>>);
     fn register_listener(&mut self, listener: &'a mut Listener);
@@ -92,5 +94,5 @@ pub trait GameEventsListener<Event> {
     fn notify(&mut self, event: &Event);
 }
 
-pub trait GameStateSnapshot: Debug+Serialize+DeserializeOwned+Send+Sync { }
-pub trait DebugOperation: Debug+Serialize+DeserializeOwned+Send+Sync { }
+pub trait GameStateSnapshot: Debug + Serialize + DeserializeOwned + Send + Sync {}
+pub trait DebugOperation: Debug + Serialize + DeserializeOwned + Send + Sync {}

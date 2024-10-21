@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::convert::From;
+use std::sync::Arc;
 
 use serde::Serialize;
 use tokio::sync::{mpsc, RwLock};
@@ -8,14 +8,17 @@ use uuid::Uuid;
 use warp::ws;
 
 use crate::game::Game;
-use crate::protocol::{Message, PlayerInfo, ProtocolError, ProtocolErrorKind, GameExtendedInfo, GameState, Variant, GameRecord};
-use crate::utils::generate_join_code;
+use crate::protocol::{
+    GameExtendedInfo, GameRecord, GameState, Message, PlayerInfo, ProtocolError, ProtocolErrorKind,
+    Variant,
+};
 use crate::store::GameStore;
 use crate::store_print::PrintStore;
 use crate::store_sled::SledStore;
+use crate::utils::generate_join_code;
 
-use std::os::unix::net::UnixStream;
 use std::io::Write;
+use std::os::unix::net::UnixStream;
 use std::sync::Mutex;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -35,9 +38,9 @@ pub struct User {
 
 impl From<PlayerInfo> for User {
     fn from(player: PlayerInfo) -> Self {
-        User { 
+        User {
             id: player.id,
-            nickname: player.nickname
+            nickname: player.nickname,
         }
     }
 }
@@ -46,7 +49,7 @@ impl From<User> for PlayerInfo {
     fn from(user: User) -> Self {
         PlayerInfo {
             id: user.id,
-            nickname: user.nickname
+            nickname: user.nickname,
         }
     }
 }
@@ -59,22 +62,27 @@ pub struct UniverseUserState {
 }
 
 pub struct UniverseState<GameStateType: GameState, PlayEventType> {
-        users: HashMap<Uuid, UniverseUserState>,
-        games: HashMap<Uuid, Arc<Game<GameStateType, PlayEventType>>>,
-        joinable_games: HashMap<String, Uuid>,
+    users: HashMap<Uuid, UniverseUserState>,
+    games: HashMap<Uuid, Arc<Game<GameStateType, PlayEventType>>>,
+    joinable_games: HashMap<String, Uuid>,
 }
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
-        state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
-        store: Arc<SledStore<GameStateType>>,
-        str_bots_socket: String,
-        // bots_stream: Arc<Mutex<Option<UnixStream>>>,
-        // store: PrintStore<GameStateType>,
+    state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
+    store: Arc<SledStore<GameStateType>>,
+    str_bots_socket: String,
+    // bots_stream: Arc<Mutex<Option<UnixStream>>>,
+    // store: PrintStore<GameStateType>,
 }
 
-impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameStateType, PlayEventT> {
+impl<GameStateType: Default + GameState, PlayEventT: Serialize + Send>
+    Universe<GameStateType, PlayEventT>
+{
     // pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
-    pub fn new(store: Arc<SledStore<GameStateType>>, str_bots_socket: String) -> Universe<GameStateType, PlayEventT> {
+    pub fn new(
+        store: Arc<SledStore<GameStateType>>,
+        str_bots_socket: String,
+    ) -> Universe<GameStateType, PlayEventT> {
         Universe {
             state: Arc::new(RwLock::new(UniverseState {
                 users: HashMap::new(),
@@ -91,19 +99,20 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
         let path_bots_socket = std::path::Path::new(&self.str_bots_socket);
         let bots_stream = UnixStream::connect(path_bots_socket).ok();
         if let Some(mut bots_socket) = bots_stream {
-            let result = bots_socket.write(join_code.as_bytes())
-                .and(Ok(()))
-                .or( 
-                    Err(ProtocolError::new(
-                            ProtocolErrorKind::NotFound,
-                            "bots not writable",))
-                );
+            let result =
+                bots_socket
+                    .write(join_code.as_bytes())
+                    .and(Ok(()))
+                    .or(Err(ProtocolError::new(
+                        ProtocolErrorKind::NotFound,
+                        "bots not writable",
+                    )));
             // bots_socket.shutdown(Shutdown::Write).expect("shutdown function failed");
             return result;
         } else {
             Err(ProtocolError::new(
-                    ProtocolErrorKind::NotFound,
-                    "bots not available",
+                ProtocolErrorKind::NotFound,
+                "bots not available",
             ))
         }
     }
@@ -111,10 +120,7 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     /// show all the active games
     pub async fn show_games(self: &Arc<Self>) -> Vec<GameExtendedInfo> {
         let state = self.state.read().await;
-        let fgames = state.games.iter()
-            .map(|(_uuid, g)| {
-                g.game_extended_info()
-            } );
+        let fgames = state.games.iter().map(|(_uuid, g)| g.game_extended_info());
         futures::future::join_all(fgames).await
     }
 
@@ -122,10 +128,13 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     pub async fn show_stored_games(self: &Arc<Self>) -> Vec<GameRecord<GameStateType>> {
         // let fgames = self.store.iter()
         // let fgames: Result<Vec<GameRecord<GameStateType>>, _> = self.store.data().iter()
-        let fgames: Vec<GameRecord<GameStateType>> = self.store.data().iter()
+        let fgames: Vec<GameRecord<GameStateType>> = self
+            .store
+            .data()
+            .iter()
             .map(|res| res.map(|game| game.1))
             .filter_map(Result::ok)
-        .collect();
+            .collect();
         fgames
         // fgames.unwrap()
     }
@@ -133,15 +142,20 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     /// for debug purposes: show all the users connected to the server, except user_id
     pub async fn show_users(self: &Arc<Self>, user_id: Uuid) -> Vec<Uuid> {
         let state = self.state.read().await;
-        let uuids:Vec<Uuid> = state.users.keys()
+        let uuids: Vec<Uuid> = state
+            .users
+            .keys()
             .filter(|k| *k != &user_id)
-            .map(|k| *k )
+            .map(|k| *k)
             .collect();
         uuids
     }
 
     /// Starts a new game.
-    pub async fn new_game(self: &Arc<Self>, variant: Variant<GameStateType::VariantParameters>) -> Arc<Game<GameStateType, PlayEventT>> {
+    pub async fn new_game(
+        self: &Arc<Self>,
+        variant: Variant<GameStateType::VariantParameters>,
+    ) -> Arc<Game<GameStateType, PlayEventT>> {
         let mut universe_state = self.state.write().await;
 
         loop {
@@ -199,16 +213,30 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
         &self,
         game_id: Uuid,
         operation: GameStateType::Operation,
-    ) -> Result<(), ProtocolError> {
+    ) -> Result<Option<String>, ProtocolError> {
         if let Some(game) = self.get_game(game_id).await {
-            game.manage_operation(operation).await;
-            return Ok(());
+            Ok(game.manage_operation(operation).await)
+        } else {
+            Err(ProtocolError::new(
+                ProtocolErrorKind::NotFound,
+                "game does not exist",
+            ))
         }
+    }
 
-        Err(ProtocolError::new(
-            ProtocolErrorKind::NotFound,
-            "game does not exist",
-        ))
+    pub async fn debug_bychat(
+        &self,
+        game_id: Uuid,
+        operation: &str,
+    ) -> Result<Option<String>, ProtocolError> {
+        if let Some(game) = self.get_game(game_id).await {
+            Ok(game.debug_bychat(operation).await)
+        } else {
+            Err(ProtocolError::new(
+                ProtocolErrorKind::NotFound,
+                "game does not exist",
+            ))
+        }
     }
 
     /// Registers a user.
@@ -228,13 +256,13 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
         let mut is_authenticated = false;
 
         // Check validity of given uuid
-        if let (Ok(user_uuid),  Ok(game_uid)) = (Uuid::parse_str(&uuid), Uuid::parse_str(&guid)) {
+        if let (Ok(user_uuid), Ok(game_uid)) = (Uuid::parse_str(&uuid), Uuid::parse_str(&guid)) {
             //Check if user is in a active game
             if let Some(user) = self.find_user_game(game_uid, user_uuid).await {
                 user_id = user_uuid;
                 game_id = Some(game_uid);
-                is_authenticated = true; 
-                nickname = user.nickname; 
+                is_authenticated = true;
+                nickname = user.nickname;
             }
         }
 
@@ -259,10 +287,7 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     /// Returns the user.
     pub async fn get_user(&self, user_id: Uuid) -> Option<User> {
         let universe_state = self.state.read().await;
-        universe_state
-            .users
-            .get(&user_id)
-            .map(|x| x.user.clone())
+        universe_state.users.get(&user_id).map(|x| x.user.clone())
     }
 
     /// Authenticates a user.
@@ -333,7 +358,10 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     }
 
     /// Returns the game a user is in.
-    pub async fn get_user_game(&self, user_id: Uuid) -> Option<Arc<Game<GameStateType, PlayEventT>>> {
+    pub async fn get_user_game(
+        &self,
+        user_id: Uuid,
+    ) -> Option<Arc<Game<GameStateType, PlayEventT>>> {
         let universe_state = self.state.read().await;
         universe_state
             .users
@@ -361,7 +389,16 @@ impl<GameStateType: Default+GameState, PlayEventT:Serialize+Send> Universe<GameS
     }
 
     /// Send a message to a single user.
-    pub async fn send(&self, user_id: Uuid, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventT>) {
+    pub async fn send(
+        &self,
+        user_id: Uuid,
+        message: &Message<
+            GameStateType::GamePlayerState,
+            GameStateType::Snapshot,
+            GameStateType::Operation,
+            PlayEventT,
+        >,
+    ) {
         let universe_state = self.state.write().await;
         if let Some(ref state) = universe_state.users.get(&user_id) {
             let s = serde_json::to_string(message).unwrap();
