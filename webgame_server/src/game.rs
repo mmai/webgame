@@ -1,28 +1,35 @@
-use std::sync::{Arc, Weak};
 use futures::executor::block_on;
-use tokio::sync::Mutex;
 use serde::Serialize;
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex;
 
-use uuid::Uuid;
 use std::fmt;
+use uuid::Uuid;
 
-use webgame_protocol::PlayerState;
 use crate::protocol::{
-    GameInfo, GameExtendedInfo, GameState, GameManager, GameEventsListener, // game
-    Message, PlayerDisconnectedMessage, // message
-    PlayerInfo, // player
+    GameEventsListener, // game
+    GameExtendedInfo,
+    GameInfo,
+    GameManager,
+    GameState,
+    Message,
+    PlayerDisconnectedMessage, // message
+    PlayerInfo,                // player
     Variant,
 };
 use crate::universe::Universe;
+use webgame_protocol::PlayerState;
 
 //trait utilisé dans le store
-pub trait UniverseGame<GameStateType> : Send+Sync {
+pub trait UniverseGame<GameStateType>: Send + Sync {
     // fn get_state(&self) -> &GameStateType;
     fn get_state(&self) -> &Arc<Mutex<GameStateType>>;
     fn get_info(&self) -> GameInfo;
 }
 
-impl<GameStateType: GameState, PlayEventType: Send+Serialize> UniverseGame<GameStateType> for Game<GameStateType, PlayEventType> {
+impl<GameStateType: GameState, PlayEventType: Send + Serialize> UniverseGame<GameStateType>
+    for Game<GameStateType, PlayEventType>
+{
     // fn get_state(&self) -> &GameStateType {
     fn get_state(&self) -> &Arc<Mutex<GameStateType>> {
         self.state_handle()
@@ -42,22 +49,25 @@ pub struct Game<GameStateType: GameState, PlayEventType> {
     game_state: Arc<Mutex<GameStateType>>,
 }
 
-impl
-    <'gs, GameStateType: GameState, PlayEventType> 
-fmt::Debug for Game<GameStateType, PlayEventType> {
+impl<'gs, GameStateType: GameState, PlayEventType> fmt::Debug
+    for Game<GameStateType, PlayEventType>
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Game")
-         .field("id", &self.id)
-         .field("join_code", &self.join_code)
-         .finish()
+            .field("id", &self.id)
+            .field("join_code", &self.join_code)
+            .finish()
     }
 }
 
-impl<'gs, GameStateType: Default+GameState,
-    PlayEventType: Send+Serialize> 
-    Game<GameStateType, PlayEventType> {
-
-    pub fn new(join_code: String, universe: Arc<Universe<GameStateType, PlayEventType>>, variant: Variant<GameStateType::VariantParameters>) -> Game<GameStateType, PlayEventType> {
+impl<'gs, GameStateType: Default + GameState, PlayEventType: Send + Serialize>
+    Game<GameStateType, PlayEventType>
+{
+    pub fn new(
+        join_code: String,
+        universe: Arc<Universe<GameStateType, PlayEventType>>,
+        variant: Variant<GameStateType::VariantParameters>,
+    ) -> Game<GameStateType, PlayEventType> {
         let mut game_state = GameStateType::default();
         game_state.set_variant(variant);
         Game {
@@ -76,8 +86,12 @@ impl<'gs, GameStateType: Default+GameState,
         &self.game_state
     }
 
-    pub async fn manage_operation(&self, operation: GameStateType::Operation) {
-        self.game_state.lock().await.manage_operation(operation);
+    pub async fn manage_operation(&self, operation: GameStateType::Operation) -> Option<String> {
+        self.game_state.lock().await.manage_operation(operation)
+    }
+
+    pub async fn debug_bychat(&self, operation: &str) -> Option<String> {
+        self.game_state.lock().await.debug_bychat(operation)
     }
 
     pub fn join_code(&self) -> &str {
@@ -90,7 +104,7 @@ impl<'gs, GameStateType: Default+GameState,
         let players: Vec<_> = game_state.get_players().keys().cloned().collect();
         GameExtendedInfo {
             game: self.game_info(),
-            players
+            players,
         }
     }
 
@@ -111,10 +125,7 @@ impl<'gs, GameStateType: Default+GameState,
 
     pub async fn add_player(&self, user_id: Uuid) {
         let universe = self.universe();
-        if !universe
-            .set_user_game_id(user_id, Some(self.id()))
-            .await
-        {
+        if !universe.set_user_game_id(user_id, Some(self.id())).await {
             return;
         }
 
@@ -131,7 +142,7 @@ impl<'gs, GameStateType: Default+GameState,
         self.broadcast(&Message::PlayerConnected(player)).await;
     }
 
-    pub async fn connected_players(&self) -> Vec<Uuid>  {
+    pub async fn connected_players(&self) -> Vec<Uuid> {
         let mut connected_ids: Vec<Uuid> = vec![];
         let game_state = self.game_state.lock().await;
         for player in game_state.get_players() {
@@ -176,7 +187,15 @@ impl<'gs, GameStateType: Default+GameState,
         game_state.update_init_state()
     }
 
-    pub async fn broadcast(&self, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventType>) {
+    pub async fn broadcast(
+        &self,
+        message: &Message<
+            GameStateType::GamePlayerState,
+            GameStateType::Snapshot,
+            GameStateType::Operation,
+            PlayEventType,
+        >,
+    ) {
         let universe = self.universe();
         {
             let game_state = self.game_state.lock().await;
@@ -184,10 +203,19 @@ impl<'gs, GameStateType: Default+GameState,
                 universe.send(player_id, message).await;
             }
         }
-        universe.store_state(&self).await;
+        // universe.store_state(&self).await;
     }
 
-    pub async fn send(&self, player_id: Uuid, message: &Message<GameStateType::GamePlayerState, GameStateType::Snapshot, GameStateType::Operation, PlayEventType>) {
+    pub async fn send(
+        &self,
+        player_id: Uuid,
+        message: &Message<
+            GameStateType::GamePlayerState,
+            GameStateType::Snapshot,
+            GameStateType::Operation,
+            PlayEventType,
+        >,
+    ) {
         self.universe().send(player_id, message).await;
     }
 
@@ -198,10 +226,7 @@ impl<'gs, GameStateType: Default+GameState,
         for player_id in game_state.get_players().keys().copied() {
             let snapshot = game_state.make_snapshot(player_id);
             universe
-                .send(
-                    player_id,
-                    &Message::GameStateSnapshot(snapshot),
-                )
+                .send(player_id, &Message::GameStateSnapshot(snapshot))
                 .await;
         }
     }
@@ -211,10 +236,7 @@ impl<'gs, GameStateType: Default+GameState,
         for player_id in game_state.get_players().keys().copied() {
             let snapshot = game_state.make_snapshot(player_id);
             universe
-                .send(
-                    player_id,
-                    &Message::GameStateSnapshot(snapshot),
-                )
+                .send(player_id, &Message::GameStateSnapshot(snapshot))
                 .await;
         }
     }
@@ -231,5 +253,4 @@ impl<'gs, GameStateType: Default+GameState,
     pub async fn is_empty(&self) -> bool {
         self.game_state.lock().await.get_players().is_empty()
     }
-
 }

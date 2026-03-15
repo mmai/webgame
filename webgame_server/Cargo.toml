@@ -1,12 +1,12 @@
 [package]
 name = "webgame_server"
-version = "0.7.5"
+version = "0.8.0"
 authors = ["Henri Bourcereau <henri@bourcereau.fr>"]
 edition = "2018"
 
 [dependencies]
 warp = "0.3.3"
-futures = "0.3.4"
+futures = "0.3.26"
 tokio = { version = "1.19.2", features = ["macros"] }
 pretty_env_logger = "0.4.0"
 serde_json = "1.0.61"
@@ -18,11 +18,12 @@ uuid = { version = "0.8.1", features = ["v4"] }
 log = "0.4.8"
 rand = "0.7.3"
 listenfd = "0.3.3"
-hyper = "0.13.4"
+hyper = "0.14.5"
 lazy_static = "1.4.0"
 clap = "2.33.0"
 tokio-timer = "0.2.13"
 chrono = "0.4.19"
-sled = "0.34.6"
-sled-extensions = { version = "0.2.0", features = ["bincode"]}
+# sled = "0.34.6"
+# sled-extensions = { version = "0.2.0", features = ["bincode"] }
 async-trait = "0.1.42"
+tokio-stream = "0.1.14"
