@@ -12,9 +12,9 @@ use crate::protocol::{
     GameExtendedInfo, GameRecord, GameState, Message, PlayerInfo, ProtocolError, ProtocolErrorKind,
     Variant,
 };
-use crate::store::GameStore;
-use crate::store_print::PrintStore;
-use crate::store_sled::SledStore;
+// use crate::store::GameStore;
+// use crate::store_print::PrintStore;
+// use crate::store_sled::SledStore;
 use crate::utils::generate_join_code;
 
 use std::io::Write;
@@ -69,7 +69,7 @@ pub struct UniverseState<GameStateType: GameState, PlayEventType> {
 
 pub struct Universe<GameStateType: GameState, PlayEventType> {
     state: Arc<RwLock<UniverseState<GameStateType, PlayEventType>>>,
-    store: Arc<SledStore<GameStateType>>,
+    //store: Arc<SledStore<GameStateType>>,
     str_bots_socket: String,
     // bots_stream: Arc<Mutex<Option<UnixStream>>>,
     // store: PrintStore<GameStateType>,
@@ -80,7 +80,7 @@ impl<GameStateType: Default + GameState, PlayEventT: Serialize + Send>
 {
     // pub fn new(db_uri: &str) -> Universe<GameStateType, PlayEventT> {
     pub fn new(
-        store: Arc<SledStore<GameStateType>>,
+        //store: Arc<SledStore<GameStateType>>,
         str_bots_socket: String,
     ) -> Universe<GameStateType, PlayEventT> {
         Universe {
@@ -90,7 +90,7 @@ impl<GameStateType: Default + GameState, PlayEventT: Serialize + Send>
                 joinable_games: HashMap::new(),
             })),
             // store: PrintStore::new(&db_uri),
-            store,
+            //store,
             str_bots_socket,
         }
     }
@@ -125,19 +125,19 @@ impl<GameStateType: Default + GameState, PlayEventT: Serialize + Send>
     }
 
     /// show all stored games
-    pub async fn show_stored_games(self: &Arc<Self>) -> Vec<GameRecord<GameStateType>> {
-        // let fgames = self.store.iter()
-        // let fgames: Result<Vec<GameRecord<GameStateType>>, _> = self.store.data().iter()
-        let fgames: Vec<GameRecord<GameStateType>> = self
-            .store
-            .data()
-            .iter()
-            .map(|res| res.map(|game| game.1))
-            .filter_map(Result::ok)
-            .collect();
-        fgames
-        // fgames.unwrap()
-    }
+    // pub async fn show_stored_games(self: &Arc<Self>) -> Vec<GameRecord<GameStateType>> {
+    //     // let fgames = self.store.iter()
+    //     // let fgames: Result<Vec<GameRecord<GameStateType>>, _> = self.store.data().iter()
+    //     let fgames: Vec<GameRecord<GameStateType>> = self
+    //         .store
+    //         .data()
+    //         .iter()
+    //         .map(|res| res.map(|game| game.1))
+    //         .filter_map(Result::ok)
+    //         .collect();
+    //     fgames
+    //     // fgames.unwrap()
+    // }
 
     /// for debug purposes: show all the users connected to the server, except user_id
     pub async fn show_users(self: &Arc<Self>, user_id: Uuid) -> Vec<Uuid> {
@@ -410,7 +410,7 @@ impl<GameStateType: Default + GameState, PlayEventT: Serialize + Send>
         }
     }
 
-    pub async fn store_state(&self, game: &Game<GameStateType, PlayEventT>) -> bool {
-        self.store.save(game).await
-    }
+    // pub async fn store_state(&self, game: &Game<GameStateType, PlayEventT>) -> bool {
+    //     self.store.save(game).await
+    // }
 }

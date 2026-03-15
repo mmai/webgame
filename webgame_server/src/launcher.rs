@@ -13,8 +13,8 @@ use std::fs;
 
 use webgame_protocol::{GameState, GameRecord};
 use crate::server;
-use crate::store::GameStore;
-use crate::store_sled::SledStore;
+// use crate::store::GameStore;
+// use crate::store_sled::SledStore;
 
 extern crate pretty_env_logger;
 
@@ -55,12 +55,12 @@ pub async fn launch<
              .value_name("BOT")
              .help("Unix socket file of the bot server")
              .takes_value(true))
-        .arg(Arg::with_name("archives")
-             .short("c")
-             .long("archives-directory")
-             .value_name("ARCHIVES")
-             .help("Directory path where game archives are stored")
-             .takes_value(true))
+        // .arg(Arg::with_name("archives")
+        //      .short("c")
+        //      .long("archives-directory")
+        //      .value_name("ARCHIVES")
+        //      .help("Directory path where game archives are stored")
+        //      .takes_value(true))
         .arg(Arg::with_name("archive_delay")
              .long("archive-delay")
              .value_name("ARCHIVEDELAY")
@@ -106,45 +106,45 @@ pub async fn launch<
 
     let db_uri = matches.value_of("databaseuri").unwrap_or("webgame_db");
     let archives_dir = matches.value_of("archives").unwrap_or("webgame_archives");
-    let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
-    let cleaner_check_interval = matches.value_of("archive_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
-    let store = Arc::new(SledStore::new(&db_uri));
+    // let cleaner_archive_after = matches.value_of("archive_delay").and_then(|val| val.parse::<i64>().ok()).unwrap_or(24);
+    // let cleaner_check_interval = matches.value_of("archive_check").and_then(|val| val.parse::<u64>().ok()).unwrap_or(120);
+    // let store = Arc::new(SledStore::new(&db_uri));
 
     let str_socket = format!("{}:{}", str_ip, str_port);
     if let Ok(socket) = str_socket.parse() {
 
         // XXX Cleaning task : should be defined in another module ?
-        let cleaner_store = Arc::clone(&store);
-        let cleaner_archives = String::from(archives_dir);
+        // let cleaner_store = Arc::clone(&store);
+        // let cleaner_archives = String::from(archives_dir);
 
-        if !Path::new(&cleaner_archives).exists(){
-            println!("Try to create archives directory {:?}", cleaner_archives);
-            fs::create_dir(&cleaner_archives).unwrap();
-        }
+        // if !Path::new(&cleaner_archives).exists(){
+        //     println!("Try to create archives directory {:?}", cleaner_archives);
+        //     fs::create_dir(&cleaner_archives).unwrap();
+        // }
 
-        thread::spawn(move || {
-            loop {
-                let now = Utc::now().time();
-                let fgames: Vec<GameRecord<GameStateType>> = cleaner_store.data().iter()
-                    .map(|res| res.map(|game| game.1))
-                    .filter_map(Result::ok)
-                    // .filter(|d| (now - d.date_updated.time()).num_hours() > cleaner_archive_after )
-                    .filter(|d| (now - d.date_updated.time()).num_minutes() > cleaner_archive_after )
-                    .collect();
-                debug!("{} games to archive", fgames.len());
-                for g in fgames {
-                    debug!("trying to save {}", &g.info.game_id);
-                    let filename = format!("{}/{}.json", cleaner_archives, &g.info.game_id);
-                    if let Ok(_ok) = serde_json::to_writer(&File::create(&filename).unwrap(), &g) {
-                        debug!("stored {}", &filename);
-                        if block_on(cleaner_store.delete(g.info.game_id)) {
-                            debug!("and deleted.. ");
-                        }
-                    }
-                }
-                thread::sleep(Duration::from_secs(60 * cleaner_check_interval));
-            }
-        });
+        // thread::spawn(move || {
+        //     loop {
+        //         let now = Utc::now().time();
+        //         let fgames: Vec<GameRecord<GameStateType>> = cleaner_store.data().iter()
+        //             .map(|res| res.map(|game| game.1))
+        //             .filter_map(Result::ok)
+        //             // .filter(|d| (now - d.date_updated.time()).num_hours() > cleaner_archive_after )
+        //             .filter(|d| (now - d.date_updated.time()).num_minutes() > cleaner_archive_after )
+        //             .collect();
+        //         debug!("{} games to archive", fgames.len());
+        //         for g in fgames {
+        //             debug!("trying to save {}", &g.info.game_id);
+        //             let filename = format!("{}/{}.json", cleaner_archives, &g.info.game_id);
+        //             if let Ok(_ok) = serde_json::to_writer(&File::create(&filename).unwrap(), &g) {
+        //                 debug!("stored {}", &filename);
+        //                 if block_on(cleaner_store.delete(g.info.game_id)) {
+        //                     debug!("and deleted.. ");
+        //                 }
+        //             }
+        //         }
+        //         thread::sleep(Duration::from_secs(60 * cleaner_check_interval));
+        //     }
+        // });
 
         let bots_socket = String::from(str_bots_socket);
         let wsocket = format!("ws://{}", str_socket);
@@ -154,7 +154,7 @@ pub async fn launch<
 
         server::serve(
             String::from(public_dir),
-            store,
+            // store,
             String::from(str_bots_socket),
             // bots_stream,
             socket,

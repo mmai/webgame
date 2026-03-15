@@ -30,7 +30,7 @@ pub enum Command<
     DebugGame(DebugGameCommand<DebugOperation>), // Send an operation to the game
     ShowUuid,         // get uuid of connected client : for use with debugUi
     ShowServerStatus, // get server infos : active games, players connected...
-    ShowServerGames,  // get stored games
+    // ShowServerGames,  // get stored games
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Hash)]

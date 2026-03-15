@@ -203,7 +203,7 @@ impl<'gs, GameStateType: Default + GameState, PlayEventType: Send + Serialize>
                 universe.send(player_id, message).await;
             }
         }
-        universe.store_state(&self).await;
+        // universe.store_state(&self).await;
     }
 
     pub async fn send(
